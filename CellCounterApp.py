@@ -20,10 +20,12 @@ pg.setConfigOption('foreground', 'k')
 
 class DrawingImage(pg.ImageItem):
     
-    def __init__(self, image=None, **kargs):
+    colors = {'r':0, 'g':1, 'b':2}
+    
+    def __init__(self, c, image=None, **kargs):
         pg.ImageItem.__init__(self, image, **kargs)
         self.kern = np.zeros((3,3,3),dtype=np.uint8)
-        self.kern[:,:,1] = 255
+        self.kern[:,:,DrawingImage.colors[c]] = 255
     
     def mouseClickEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -90,27 +92,52 @@ class MainWindow(QMainWindow):
         hlayout_top.addWidget(browse_button)
         hlayout_top.addWidget(run_button)
         
+        tabs = QTabWidget()
+        redTab = QWidget()
+        redTabLayout = QHBoxLayout(redTab)
+        redTab.setLayout(redTabLayout)
+        tabs.addTab(redTab, "Red")
         
-        self.backgroundImage = pg.ImageItem(opacity=1, border=pg.mkPen('g',width=5))
-        self.cellImage = DrawingImage(opacity=.2)
-        self.hoverImage = HoverImage(opacity=.2)
-        
-        self.view = pg.GraphicsView(parent=self)
-        l = pg.GraphicsLayout()
-        self.view.setCentralItem(l)
-        
+        self.redBackgroundImage = pg.ImageItem(opacity=1, border=pg.mkPen('r',width=5))
+        self.redCellImage = DrawingImage('r', opacity=.2)
+        self.redHoverImage = HoverImage(opacity=.2)
+        self.redView = pg.GraphicsView(parent=redTab)
         ## Title at top
-        text = "Green Image"
-        l.addLabel(text, col=0)
-        l.nextRow()
-        self.vb = l.addViewBox(lockAspect=True)
-        self.vb.addItem(self.backgroundImage)
-        self.vb.addItem(self.cellImage)
-        self.vb.addItem(self.hoverImage)
+        redGraphLayout = pg.GraphicsLayout()
+        redTitle = "Red Image"
+        redGraphLayout.addLabel(redTitle, col=0)
+        redGraphLayout.nextRow()
+        self.redVb = redGraphLayout.addViewBox(lockAspect=True)
+        self.redVb.addItem(self.redBackgroundImage)
+        self.redVb.addItem(self.redCellImage)
+        self.redVb.addItem(self.redHoverImage)
+        self.redView.setCentralItem(redGraphLayout)
+        redTabLayout.addWidget(self.redView)
+        
+        greenTab = QWidget()
+        greenTabLayout = QHBoxLayout(greenTab)
+        greenTab.setLayout(greenTabLayout)
+        tabs.addTab(greenTab, "Green")
+        
+        self.greenBackgroundImage = pg.ImageItem(opacity=1, border=pg.mkPen('g',width=5))
+        self.greenCellImage = DrawingImage('g', opacity=.2)
+        self.greenHoverImage = HoverImage(opacity=.2)
+        self.greenView = pg.GraphicsView(parent=greenTab)
+        ## Title at top
+        greenGraphLayout = pg.GraphicsLayout()
+        greenTitle = "Green Image"
+        greenGraphLayout.addLabel(greenTitle, col=0)
+        greenGraphLayout.nextRow()
+        self.greenVb = greenGraphLayout.addViewBox(lockAspect=True)
+        self.greenVb.addItem(self.greenBackgroundImage)
+        self.greenVb.addItem(self.greenCellImage)
+        self.greenVb.addItem(self.greenHoverImage)
+        self.greenView.setCentralItem(greenGraphLayout)
+        greenTabLayout.addWidget(self.greenView)        
         
         button = QPushButton('poopies')
         
-        hlayout_bottom.addWidget(self.view)
+        hlayout_bottom.addWidget(tabs)
         hlayout_bottom.addWidget(button)
         
         widget = QWidget()
@@ -122,16 +149,20 @@ class MainWindow(QMainWindow):
         
         
     def browse_button_callback(self):
-        filename, _ = QFileDialog.getOpenFileName(self,"Select Image File", "","All Files (*);;Tiff Files(*.tiff)")
+        filename, _ = QFileDialog.getOpenFileName(self,"Select Image File","./images","Tiff Files(*.tif);;All Files (*)")
         self.fname_entry.setText(filename)
         
     def run_button_callback(self):
         fname = self.fname_entry.text()
         greenImg, redImg, greenCells, redCells = cc.findCells(fname)
         greenCells = np.insert(np.zeros((greenCells.shape[1],greenCells.shape[0],2),dtype=np.uint8), 1, greenCells.T, axis=2)
-        self.backgroundImage.setImage(greenImg.astype(np.uint8).T)
-        self.cellImage.setImage(greenCells)
-        self.hoverImage.setImage(np.zeros_like(greenImg.T, dtype=np.uint8))
+        redCells = np.insert(np.zeros((redCells.shape[1],redCells.shape[0],2),dtype=np.uint8), 0, redCells.T, axis=2)
+        self.redBackgroundImage.setImage(redImg.astype(np.uint8).T)
+        self.redCellImage.setImage(redCells)
+        self.redHoverImage.setImage(np.zeros_like(redImg.T, dtype=np.uint8))
+        self.greenBackgroundImage.setImage(greenImg.astype(np.uint8).T)
+        self.greenCellImage.setImage(greenCells)
+        self.greenHoverImage.setImage(np.zeros_like(greenImg.T, dtype=np.uint8))
 
 
 if __name__ == '__main__':
