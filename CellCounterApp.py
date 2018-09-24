@@ -26,6 +26,8 @@ class DrawingImage(pg.ImageItem):
         pg.ImageItem.__init__(self, image, **kargs)
         self.kern = np.zeros((3,3,3),dtype=np.uint8)
         self.kern[:,:,DrawingImage.colors[c]] = 255
+        self.x = None
+        self.y = None
     
     def mouseClickEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -42,7 +44,49 @@ class DrawingImage(pg.ImageItem):
             if event.button() == Qt.RightButton:
                 self.setDrawKernel(self.kern*0, center=(1,1))
         if event.button() in [Qt.LeftButton, Qt.RightButton]:
+            
+            pos = event.pos()
+            x, y = int(np.round(pos.x())), int(np.round(pos.y()))
             self.drawAt(event.pos(), event)
+            if self.x is None or self.y is None:
+                self.x = x
+                self.y = y
+                return
+            sx,sy = np.sign(x-self.x), np.sign(y-self.y)
+            
+            if sx == 0:
+                
+                return
+            
+            if sy == 0:
+                
+                return
+            
+            
+            X,Y = np.meshgrid(np.arange(1,abs(x-self.x))*sx,np.arange(1,abs(y-self.y))*sy)
+            slope = (y-self.y)/(x-self.x)
+            self.x = x
+            self.y = y
+            if sx == 1 and sy == 1:
+                gte = slope >= (2*Y-1)/(2*X+1)
+                lte = slope <= (2*Y+1)/(2*X-1)
+            elif sx == 1 and sy == -1:
+                lte = slope <= (2*Y+1)/(2*X+1)
+                gte = slope >= (2*Y-1)/(2*X-1)
+            elif sx == -1 and sy == -1:
+                lte = slope <= (2*Y-1)/(2*X+1)
+                gte = slope >= (2*Y+1)/(2*X-1)
+            elif sx == -1 and sy == 1:
+                lte = slope <= (2*Y-1)/(2*X-1)
+                gte = slope >= (2*Y+1)/(2*X+1)
+                
+            result = lte*gte
+            pixels = np.where(result)
+            xs = pixels[0] + y
+            ys = pixels[1] + x
+            for x1,y1 in zip(xs,ys):
+                p = QPoint(x1,y1)
+                self.drawAt(p)
 
     def hoverEvent(self, event):
         if not event.isExit():
@@ -151,18 +195,20 @@ class MainWindow(QMainWindow):
     def browse_button_callback(self):
         filename, _ = QFileDialog.getOpenFileName(self,"Select Image File","./images","Tiff Files(*.tif);;All Files (*)")
         self.fname_entry.setText(filename)
+        # Open Image
+        im = cv2.imread(filename)
+        blue, self.greenImg, self.redImg = cv2.split(im)
+        self.redBackgroundImage.setImage(self.redImg.astype(np.uint8).T)
+        self.redHoverImage.setImage(np.zeros_like(self.redImg.T, dtype=np.uint8))
+        self.greenBackgroundImage.setImage(self.greenImg.astype(np.uint8).T)
+        self.greenHoverImage.setImage(np.zeros_like(self.greenImg.T, dtype=np.uint8))
         
     def run_button_callback(self):
-        fname = self.fname_entry.text()
-        greenImg, redImg, greenCells, redCells = cc.findCells(fname)
+        greenCells, redCells = cc.findCells(self.greenImg, self.redImg)
         greenCells = np.insert(np.zeros((greenCells.shape[1],greenCells.shape[0],2),dtype=np.uint8), 1, greenCells.T, axis=2)
         redCells = np.insert(np.zeros((redCells.shape[1],redCells.shape[0],2),dtype=np.uint8), 0, redCells.T, axis=2)
-        self.redBackgroundImage.setImage(redImg.astype(np.uint8).T)
         self.redCellImage.setImage(redCells)
-        self.redHoverImage.setImage(np.zeros_like(redImg.T, dtype=np.uint8))
-        self.greenBackgroundImage.setImage(greenImg.astype(np.uint8).T)
         self.greenCellImage.setImage(greenCells)
-        self.greenHoverImage.setImage(np.zeros_like(greenImg.T, dtype=np.uint8))
 
 
 if __name__ == '__main__':

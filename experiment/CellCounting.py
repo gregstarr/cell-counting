@@ -10,7 +10,11 @@ from scipy.signal import correlate2d
 import scipy.ndimage as ndi
 import cv2
 
-def findCells(greenImg, redImg):
+def findCells(imageFile):
+    
+    # Open Image
+    im = cv2.imread(imageFile)
+    blue, greenImg, redImg = cv2.split(im)
     
     # Add noise to blank pixels
     gwn = addHorizontalNoise(greenImg)
@@ -31,7 +35,7 @@ def findCells(greenImg, redImg):
     greenCells = gxc > gxc.max()/8
     redCells = rxc > rxc.max()/8
     
-    return greenCells, redCells
+    return greenImg, redImg, greenCells, redCells
 
 def addHorizontalNoise(image):
     

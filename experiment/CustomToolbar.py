@@ -151,9 +151,11 @@ class CustomToolbar(NavigationToolbar2Tk):
             return
 
         if event.xdata is not None and event.ydata is not None:
-            self._xypress = set()
-            x, y = int(np.round(event.xdata)), int(np.round(event.ydata))
-            self._xypress.add((x,y))
+            self.x, self.y = int(np.round(event.xdata)), int(np.round(event.ydata))
+            if event.button == 1:
+                self.gui.greenCells[self.y,self.x] = 1
+            elif event.button == 3:
+                self.gui.greenCells[self.y,self.x] = 0
             self.canvas.mpl_disconnect(self._idDrag)
             self._idDrag = self.canvas.mpl_connect('motion_notify_event',
                                                    self.drag_paint)
@@ -162,17 +164,60 @@ class CustomToolbar(NavigationToolbar2Tk):
         """Callback for dragging in paint mode."""
         if event.xdata is not None and event.ydata is not None:
             x, y = int(np.round(event.xdata)), int(np.round(event.ydata))
-            self._xypress.add((x,y))
-        if (len(self._xypress) % 20) == 0:
+            sx,sy = np.sign(x-self.x), np.sign(y-self.y)
+            
+            if sx == 0:
+                if self._button_pressed == 1:
+                    self.gui.greenCells[min(y,self.y):max(y,self.y)+1,x] = 1
+                if self._button_pressed == 3:
+                    self.gui.greenCells[min(y,self.y):max(y,self.y)+1,x] = 0
+                self.updateCellImage()
+                return
+            
+            if sy == 0:
+                if self._button_pressed == 1:
+                    self.gui.greenCells[y,min(x,self.x):max(x,self.x)+1] = 1
+                if self._button_pressed == 3:
+                    self.gui.greenCells[y,min(x,self.x):max(x,self.x)+1] = 0
+                self.updateCellImage()
+                return
+            
+            
+            X,Y = np.meshgrid(np.arange(1,abs(x-self.x))*sx,np.arange(1,abs(y-self.y))*sy)
+            slope = (y-self.y)/(x-self.x)
+            if sx == 1 and sy == 1:
+                gte = slope >= (2*Y-1)/(2*X+1)
+                lte = slope <= (2*Y+1)/(2*X-1)
+            elif sx == 1 and sy == -1:
+                lte = slope <= (2*Y+1)/(2*X+1)
+                gte = slope >= (2*Y-1)/(2*X-1)
+            elif sx == -1 and sy == -1:
+                lte = slope <= (2*Y-1)/(2*X+1)
+                gte = slope >= (2*Y+1)/(2*X-1)
+            elif sx == -1 and sy == 1:
+                lte = slope <= (2*Y-1)/(2*X-1)
+                gte = slope >= (2*Y+1)/(2*X+1)
+                
+            result = lte*gte
+            
             if self._button_pressed == 1:
-                for x,y in self._xypress:
-                    self.gui.greenCells[y,x] = 1
+                self.gui.greenCells[y,x] = 1
+                self.gui.greenCells[min(y,self.y)+1:max(y,self.y),min(x,self.x)+1:max(x,self.x)] |= result[::sx,::sy]
             elif self._button_pressed == 3:
-                for x,y in self._xypress:
-                    self.gui.greenCells[y,x] = 0
-            self.gui.cellImShow.set_array(self.gui.greenCells)
-            self._xypress = set()
-            self.canvas.draw()
+                self.gui.greenCells[y,x] = 0
+                self.gui.greenCells[min(y,self.y)+1:max(y,self.y),min(x,self.x)+1:max(x,self.x)] &= ~result
+                
+            self.x, self.y = x,y
+        else:
+            return
+        self.updateCellImage()
+        
+    def updateCellImage(self):
+        self.gui.cellImShow.set_array(self.gui.greenCells)
+        self.gui.canvas.restore_region(self.gui.axbg)
+        self.gui.ax.draw_artist(self.gui.greenImShow)
+        self.gui.ax.draw_artist(self.gui.cellImShow)
+        self.gui.fig.canvas.blit(self.gui.ax.bbox)
             
     def release_paint(self, event):
         """Callback for mouse button release in paint mode."""

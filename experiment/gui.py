@@ -43,6 +43,7 @@ class CellCounter(tk.Tk):
         self.canvas = FigureCanvasTkAgg(self.fig, container)
         self.canvas.draw()
         self.canvas.get_tk_widget().grid(row=1, column=0, columnspan=3, padx=10, pady=5, sticky=tk.N+tk.S+tk.E+tk.W)
+        self.axbg = self.canvas.copy_from_bbox(self.ax.bbox)
         
         toolbar_frame = tk.Frame(container)
         toolbar_frame.grid(row=2, column=0, columnspan=3, padx=10, pady=5, sticky=tk.N+tk.S+tk.E+tk.W)
@@ -67,6 +68,7 @@ class CellCounter(tk.Tk):
         
         self.erase_button = tk.Button(toolbar_frame, text="Erase", command=self.erase)
         self.erase_button.pack(side=tk.RIGHT)
+                
         
     def run(self):
         
@@ -76,9 +78,9 @@ class CellCounter(tk.Tk):
             return
         
         self.greenImg, self.redImg, self.greenCells, self.redCells = cc.findCells(imageFile)
+        self.greenImShow = self.ax.imshow(self.greenImg, interpolation='None', animated=True)
+        self.cellImShow = self.ax.imshow(self.greenCells, alpha=.1, interpolation='None', animated=True)
         
-        self.ax.imshow(self.greenImg)
-        self.cellImShow = self.ax.imshow(self.greenCells, alpha=.1)
         self.ax.set_position([.05,.05,.9,.9])
         self.canvas.draw()
         
