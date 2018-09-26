@@ -8,13 +8,13 @@ Created on Sun Sep  9 18:48:03 2018
 import numpy as np
 from scipy.signal import correlate2d
 import scipy.ndimage as ndi
+import skimage.measure as skm
 import cv2
 
-def findCells(greenImg, redImg):
+def findCells(img, threshold=.125):
     
     # Add noise to blank pixels
-    gwn = addHorizontalNoise(greenImg)
-    rwn = addHorizontalNoise(redImg)
+    img_w_noise = addHorizontalNoise(img)
     
     # create gaussian image cell template
     var = 4
@@ -22,16 +22,17 @@ def findCells(greenImg, redImg):
     temp = np.exp(-.5*((X**2+Y**2)/var))
     
     # correlate with green image
-    gxc = correlate2d(gwn, temp-temp.mean(), 'valid')
-    gxc = ndi.interpolation.shift(gxc, [temp.shape[1]/2,temp.shape[0]/2])
-    rxc = correlate2d(rwn, temp-temp.mean(), 'valid')
-    rxc = ndi.interpolation.shift(rxc, [temp.shape[1]/2,temp.shape[0]/2])
+    xc = correlate2d(img_w_noise, temp-temp.mean(), 'valid')
+    xc = ndi.interpolation.shift(xc, [temp.shape[1]/2,temp.shape[0]/2])
     
     # threshold
-    greenCells = gxc > gxc.max()/8
-    redCells = rxc > rxc.max()/8
+    cells = xc > xc.max() * threshold
     
-    return greenCells, redCells
+    return cells
+
+def countCells(bin_img):
+    labels,n = ndi.label(bin_img)
+    return n
 
 def addHorizontalNoise(image):
     
