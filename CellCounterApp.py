@@ -196,6 +196,13 @@ class MainWindow(QMainWindow):
         self.greenVb.addItem(self.greenHoverImage)
         self.greenView.setCentralItem(self.greenVb)
         greenTabLayout.addWidget(self.greenView)  
+        # blue tab
+        blueTab = QWidget()
+        blueTabLayout = QHBoxLayout(blueTab)
+        blueTab.setLayout(blueTabLayout)
+        tabs.addTab(blueTab, "Blue")
+        self.blueBackgroundImage = pg.ImageItem(opacity=1, border=pg.mkPen('b',width=5))
+
         # yellow tab
         yellowTab = QWidget()
         yellowTabLayout = QHBoxLayout(yellowTab)
@@ -306,11 +313,12 @@ class MainWindow(QMainWindow):
         self.fname_entry.setText(filename)
         # Open Image
         im = cv2.imread(filename)
-        blue, self.greenImg, self.redImg = cv2.split(im)
+        self.blueImg, self.greenImg, self.redImg = cv2.split(im)
         self.redBackgroundImage.setImage(self.redImg.astype(np.uint8).T)
         self.redHoverImage.setImage(np.zeros_like(self.redImg.T, dtype=np.uint8))
         self.greenBackgroundImage.setImage(self.greenImg.astype(np.uint8).T)
         self.greenHoverImage.setImage(np.zeros_like(self.greenImg.T, dtype=np.uint8))
+        self.blueBackgroundImage.setImage(self.blueImg.astype(np.uint8).T)
         self.yellowBackgroundImage.setImage(im.astype(np.uint8).transpose(1,0,2))
         self.yellowHoverImage.setImage(np.zeros_like(im[:,:,0].T, dtype=np.uint8))
         
