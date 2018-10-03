@@ -202,7 +202,11 @@ class MainWindow(QMainWindow):
         blueTab.setLayout(blueTabLayout)
         tabs.addTab(blueTab, "Blue")
         self.blueBackgroundImage = pg.ImageItem(opacity=1, border=pg.mkPen('b',width=5))
-
+        self.blueView = pg.GraphicsView(parent=blueTab)
+        self.blueVb = pg.ViewBox(lockAspect=True)
+        self.blueVb.addItem(self.blueBackgroundImage)
+        self.blueView.setCentralItem(self.blueVb)
+        blueTabLayout.addWidget(self.blueView)  
         # yellow tab
         yellowTab = QWidget()
         yellowTabLayout = QHBoxLayout(yellowTab)
@@ -284,7 +288,6 @@ class MainWindow(QMainWindow):
         detectionLayout.addWidget(variance_entry)
         #remove horizontal noise checkbox
         
-        
         # run / count buttons
         runControlBox = QGroupBox("Run / Count")
         bottom_right_layout.addWidget(runControlBox)
@@ -298,6 +301,16 @@ class MainWindow(QMainWindow):
         count_button = QPushButton("Count Cells")
         count_button.pressed.connect(self.count_button_callback)
         runControlLayout.addWidget(count_button)
+        
+        #blue channel layers
+        layersControlBox = QGroupBox("Add Layers")
+        bottom_right_layout.addWidget(layersControlBox)
+        layersControlLayout = QVBoxLayout()
+        layersControlBox.setLayout(layersControlLayout)
+        #add layers button 
+        layer_button = QPushButton("Add Layers")
+        layer_button.pressed.connect(self.layer_button_callback)
+        layersControlLayout.addWidget(layer_button)
         
         self.setWindowTitle("Cell Counter 2000")
         self.setGeometry(100,100,1280,960)
@@ -335,10 +348,33 @@ class MainWindow(QMainWindow):
             greenCells = cc.findCells(self.greenImg, self.threshold)
             greenCells = np.insert(np.zeros((greenCells.shape[1],greenCells.shape[0],2),dtype=np.uint8), 1, greenCells.T, axis=2)
             self.greenCellImage.setImage(greenCells)
-        
+            
+    def layer_button_callback(self):
+        if self.current_tab == 2:
+            layers = cc.addLayers(self.blueImg)
+            width = self.blueImg.shape[1]
+            height = self.blueImg.shape[0]
+            layer1 = layers['layer1']
+            layer2_3 = layers['layer2/3']
+            layer4 = layers['layer4']
+            layer5 = layers['layer5']
+            layer6 = layers['layer6']
+            
+            imLayer1 = cv2.rectangle(self.blueImg, (0,0), (width,layer1[-1]), (255, 255, 00), 3)
+            imLayer2_3 = cv2.rectangle(self.blueImg, (0,layer1[-1]), (width, layer2_3[-1]), (255, 255, 00), 3)
+            imLayer4 = cv2.rectangle(self.blueImg, (0,layer2_3[-1]), (width,layer4[-1]), (255, 255, 00), 3)
+            imLayer5 = cv2.rectangle(self.blueImg, (0,layer4[-1]), (width,layer5[-1]), (255, 255, 00), 3)
+            imLayer6 = cv2.rectangle(self.blueImg, (0,layer5[-1]), (width,height), (255, 255, 00), 3)
+
+            self.blueBackgroundImage.setImage(imLayer1)
+            self.blueBackgroundImage.setImage(imLayer2_3)
+            self.blueBackgroundImage.setImage(imLayer4)
+            self.blueBackgroundImage.setImage(imLayer5)
+            self.blueBackgroundImage.setImage(imLayer6)
+            
     def tab_changed_callback(self, index):
         self.current_tab = index
-        if self.current_tab == 2:
+        if self.current_tab == 3:
             colocal = (self.greenCellImage.image[:,:,1] > 0) * (self.redCellImage.image[:,:,0] > 0)
             colocal = np.stack([colocal*255, colocal*255, np.zeros_like(colocal,dtype=np.uint8)], axis=2)
             self.yellowCellImage.setImage(colocal)
@@ -362,7 +398,7 @@ class MainWindow(QMainWindow):
             self.redCellImage.setOpacity(self.opacity)
         elif self.current_tab == 1:
             self.greenCellImage.setOpacity(self.opacity)
-        elif self.current_tab == 2:
+        elif self.current_tab == 3:
             self.yellowCellImage.setOpacity(self.opacity)
     
     def showhide_button_callback(self):

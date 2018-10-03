@@ -11,6 +11,8 @@ import scipy.ndimage as ndi
 import skimage.measure as skm
 import cv2
 
+
+
 def findCells(img, threshold=.125):
     
     # Add noise to blank pixels
@@ -48,3 +50,58 @@ def addHorizontalNoise(image):
         image_with_noise[i,lo-4:] = ndi.filters.gaussian_filter1d(image_with_noise[i,lo-4:], 4)
         
     return image_with_noise
+
+def addLayers(blue):
+    
+    avg = np.mean(blue, axis = 1)
+    
+    rows = len(avg)
+    layer1 = []
+    layer2_3 = []
+    layer4 = []
+    layer5 = []
+    layer6 = []
+    layers = []
+    lowDensity = []
+    midDensity = []
+    highDensity = []
+    
+    for x in range(rows):
+        if avg[x]<=30:
+            lowDensity.append(x)
+        elif 30 < avg[x] <= 40:
+            midDensity.append(x)
+        elif 40 < avg[x] <= 60:
+            highDensity.append(x)     
+    
+    lenLow = len(lowDensity)
+    lenMid = len(midDensity)
+    lenHigh = len(highDensity) 
+    
+    for x in range(lenLow-1):
+       if lowDensity[x+1] - lowDensity[x] < 15:
+           layer1End = lowDensity[x+1]
+       else:
+           break
+    
+    for x in range(lenMid-1):
+        if midDensity[x] > layer1End:
+            if midDensity[x+1] - midDensity[x] < 15:
+                layer2End = midDensity[x+1]
+            else:
+                break
+    
+    for x in range(lenHigh-1):
+        if highDensity[x] > layer2End:
+            if highDensity[x+1] - highDensity[x] < 70:
+                layer3End = highDensity[x+1]
+                layer4End = highDensity[x+2]
+            else:
+                break
+    
+    layer1 = np.arange(0, layer1End)
+    layer2_3 = np.arange(layer1End+1, layer2End)
+    layer4 = np.arange(layer2End+1, layer3End)
+    layer5 = np.arange(layer3End+1, layer4End)
+    layer6 = np.arange(layer4End+1, rows)
+    return {'layer1':layer1, 'layer2/3':layer2_3, 'layer4':layer4, 'layer5':layer5, 'layer6':layer6 }
