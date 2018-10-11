@@ -13,6 +13,7 @@ import pyqtgraph as pg
 import cv2
 import numpy as np
 import CellCounting as cc
+import os
 
 # Base PyQtGraph configuration
 pg.setConfigOption('background', 'w')
@@ -126,8 +127,7 @@ class HoverImage(pg.ImageItem):
         else:
             self.image[:,:] = 0
             self.updateImage()
-
-
+    
 class MainWindow(QMainWindow):
 
     def __init__(self, *args, **kwargs):
@@ -318,10 +318,9 @@ class MainWindow(QMainWindow):
         a,b = hlayout_bottom.sizes()
         hlayout_bottom.setSizes([.8*(a+b), .2*(a+b)])
         
-        
     def browse_button_callback(self):
         filename, _ = QFileDialog.getOpenFileName(self,"Select Image File","./images","Tiff Files(*.tif);;All Files (*)")
-        if filename is None:
+        if not os.path.isfile(filename):
             return
         self.fname_entry.setText(filename)
         # Open Image
@@ -336,13 +335,13 @@ class MainWindow(QMainWindow):
         self.yellowHoverImage.setImage(np.zeros_like(im[:,:,0].T, dtype=np.uint8))
         
     def run_button_callback(self):
-        if self.current_tab == 0:
+        if self.current_tab == 0: #red
             if self.redImg is None:
                 return
             redCells = cc.findCells(self.redImg, self.threshold)
             redCells = np.insert(np.zeros((redCells.shape[1],redCells.shape[0],2),dtype=np.uint8), 0, redCells.T, axis=2)
             self.redCellImage.setImage(redCells)
-        elif self.current_tab == 1:
+        elif self.current_tab == 1: #green
             if self.greenImg is None:
                 return
             greenCells = cc.findCells(self.greenImg, self.threshold)
@@ -350,39 +349,42 @@ class MainWindow(QMainWindow):
             self.greenCellImage.setImage(greenCells)
             
     def layer_button_callback(self):
-        if self.current_tab == 2:
-            layers = cc.addLayers(self.blueImg)
-            width = self.blueImg.shape[1]
-            height = self.blueImg.shape[0]
-            layer1 = layers['layer1']
-            layer2_3 = layers['layer2/3']
-            layer4 = layers['layer4']
-            layer5 = layers['layer5']
-            layer6 = layers['layer6']
-            
-            imLayer1 = cv2.rectangle(self.blueImg, (0,0), (width,layer1[-1]), (255, 255, 00), 3)
-            imLayer2_3 = cv2.rectangle(self.blueImg, (0,layer1[-1]), (width, layer2_3[-1]), (255, 255, 00), 3)
-            imLayer4 = cv2.rectangle(self.blueImg, (0,layer2_3[-1]), (width,layer4[-1]), (255, 255, 00), 3)
-            imLayer5 = cv2.rectangle(self.blueImg, (0,layer4[-1]), (width,layer5[-1]), (255, 255, 00), 3)
-            imLayer6 = cv2.rectangle(self.blueImg, (0,layer5[-1]), (width,height), (255, 255, 00), 3)
-
-            self.blueBackgroundImage.setImage(imLayer1)
-            self.blueBackgroundImage.setImage(imLayer2_3)
-            self.blueBackgroundImage.setImage(imLayer4)
-            self.blueBackgroundImage.setImage(imLayer5)
-            self.blueBackgroundImage.setImage(imLayer6)
-            
+        layers = cc.addLayers(self.blueImg)
+        width = self.blueImg.shape[1]
+        height = self.blueImg.shape[0]
+        
+        self.layerlines = []
+        for layer in layers:
+            inf = pg.InfiniteLine(movable=True, angle=0)
+            inf.setValue(layer)
+            self.blueVb.addItem(inf)
+            self.layerlines.append(inf)
+    
+                
     def tab_changed_callback(self, index):
         self.current_tab = index
-        if self.current_tab == 3:
+        if self.current_tab == 3 and self.greenCellImage.image is not None and self.redCellImage.image is not None:
             colocal = (self.greenCellImage.image[:,:,1] > 0) * (self.redCellImage.image[:,:,0] > 0)
             colocal = np.stack([colocal*255, colocal*255, np.zeros_like(colocal,dtype=np.uint8)], axis=2)
             self.yellowCellImage.setImage(colocal)
         
     def count_button_callback(self):
-        count = cc.countCells(self.yellowCellImage.image.sum(axis=2) > 0)
-        print(count)
-    
+        layerVals = []
+        for layerline in self.layerlines:
+            layerVals.append(layerline.value())
+        countY = cc.countCells(self.yellowCellImage.image.sum(axis=2) > 0, layerVals)
+        countR = cc.countCells(self.redCellImage.image.sum(axis=2) > 0, layerVals)
+        countG = cc.countCells(self.greenCellImage.image.sum(axis=2) > 0, layerVals)
+
+        for x in countY:
+            print(x)
+            
+        for x in countR:
+            print(x)
+            
+        for x in countG:
+            print(x)
+            
     def threshold_slider_callback(self, value):
         self.threshold = value / 100
         self.threshold_label.setText("Detection Threshold: {}".format(self.threshold))
