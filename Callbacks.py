@@ -4,7 +4,7 @@ from PyQt5.QtCore import *
 import pyqtgraph as pg
 import cv2
 import numpy as np
-import CellCounting as cc
+import ImageProc as ip
 import os
 
 class Mixin:
@@ -28,21 +28,18 @@ class Mixin:
         if self.current_tab == 0: #red
             if self.redImg is None:
                 return
-            redCells = cc.findCells(self.redImg, self.threshold)
+            redCells = ip.findCells(self.redImg, self.threshold)
             redCells = np.insert(np.zeros((redCells.shape[1],redCells.shape[0],2),dtype=np.uint8), 0, redCells.T, axis=2)
             self.redCellImage.setImage(redCells)
         elif self.current_tab == 1: #green
             if self.greenImg is None:
                 return
-            greenCells = cc.findCells(self.greenImg, self.threshold)
+            greenCells = ip.findCells(self.greenImg, self.threshold)
             greenCells = np.insert(np.zeros((greenCells.shape[1],greenCells.shape[0],2),dtype=np.uint8), 1, greenCells.T, axis=2)
             self.greenCellImage.setImage(greenCells)
             
     def layer_button_callback(self):
-        layers = cc.addLayers(self.blueImg)
-        width = self.blueImg.shape[1]
-        height = self.blueImg.shape[0]
-        
+        layers = ip.addLayers(self.blueImg)
         self.layerlines = []
         for layer in layers:
             inf = pg.InfiniteLine(movable=True, angle=0)
@@ -62,9 +59,9 @@ class Mixin:
         layerVals = []
         for layerline in self.layerlines:
             layerVals.append(layerline.value())
-        countY = cc.countCells(self.yellowCellImage.image.sum(axis=2) > 0, layerVals)
-        countR = cc.countCells(self.redCellImage.image.sum(axis=2) > 0, layerVals)
-        countG = cc.countCells(self.greenCellImage.image.sum(axis=2) > 0, layerVals)
+        countY = ip.countCells(self.yellowCellImage.image.sum(axis=2) > 0, layerVals)
+        countR = ip.countCells(self.redCellImage.image.sum(axis=2) > 0, layerVals)
+        countG = ip.countCells(self.greenCellImage.image.sum(axis=2) > 0, layerVals)
     
         for x in countY:
             print(x)
