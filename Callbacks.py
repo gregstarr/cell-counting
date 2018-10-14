@@ -66,6 +66,11 @@ class Mixin:
                 self.blueVb.addItem(inf)
                 self.layerlines.append(inf)
                 
+    def update_colocal_image(self):
+        colocal = (self.greenCellImage.image[:,:,1] > 0) * (self.redCellImage.image[:,:,0] > 0)
+        colocal = np.stack([colocal*255, colocal*255, np.zeros_like(colocal,dtype=np.uint8)], axis=2)
+        self.yellowCellImage.setImage(colocal)
+                
     def tab_changed_callback(self, index):
         self.current_tab = index
         if self.current_tab == Tabs.red and self.redImg is not None:
@@ -78,16 +83,25 @@ class Mixin:
             self.layer_button.setEnabled(True)
         else:
             self.layer_button.setEnabled(False)
-        if (self.current_tab == Tabs.yellow and self.greenCellImage.image is not 
-            None and self.redCellImage.image is not None):
-            colocal = (self.greenCellImage.image[:,:,1] > 0) * (self.redCellImage.image[:,:,0] > 0)
-            colocal = np.stack([colocal*255, colocal*255, np.zeros_like(colocal,dtype=np.uint8)], axis=2)
-            self.yellowCellImage.setImage(colocal)
+        if (self.current_tab == Tabs.yellow and 
+            self.greenCellImage.image is not None and 
+            self.redCellImage.image is not None):
+            self.update_colocal_image()
         
     def count_button_callback(self):
+        if(self.redCellImage.image is None or
+           self.greenCellImage.image is None):
+            print("Label cells before counting cells")
+            return
+        if self.yellowCellImage.image is None:
+            self.update_colocal_image()
         layerVals = []
-        for layerline in self.layerlines:
-            layerVals.append(layerline.value())
+        if self.layerlines is None:
+            layerVals = None
+            print("No layer lines, assuming all cells are in layer 1")
+        else:
+            for layerline in self.layerlines:
+                layerVals.append(layerline.value())
         countY = ip.countCells(self.yellowCellImage.image.sum(axis=2) > 0, layerVals)
         countR = ip.countCells(self.redCellImage.image.sum(axis=2) > 0, layerVals)
         countG = ip.countCells(self.greenCellImage.image.sum(axis=2) > 0, layerVals)
