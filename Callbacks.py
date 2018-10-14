@@ -18,17 +18,17 @@ class Mixin:
     def browse_button_callback(self):
         filename, _ = QFileDialog.getOpenFileName(self,"Select Image File","./images","Tiff Files(*.tif);;All Files (*)")
         if not os.path.isfile(filename):
-            print("User pressed cancel or selected invalid file")
+            self.status_box.append("User pressed cancel or selected invalid file")
             return
         self.fname_entry.setText(filename)
         # Open Image
         im = cv2.imread(filename)
         if im is None:
-            print("Invalid image")
+            self.status_box.append("Invalid image")
             return
         self.blueImg, self.greenImg, self.redImg = cv2.split(im)
         if self.blueImg.sum() == 0:
-            print("Selected image has no blue channel")
+            self.status_box.append("Selected image has no blue channel")
             self.blueImg = None
         else:
             self.blueBackgroundImage.setImage(self.blueImg.astype(np.uint8).T)
@@ -39,6 +39,25 @@ class Mixin:
         self.yellowBackgroundImage.setImage(im.astype(np.uint8).transpose(1,0,2))
         if self.current_tab in [Tabs.red, Tabs.green]:
             self.run_button.setEnabled(True)
+            
+    def browse_export_button_callback(self):
+        dirname = QFileDialog.getExistingDirectory(self,"Select export location","./",QFileDialog.ShowDirsOnly)
+        self.export_entry.setText(dirname)
+        
+    def export_button_callback(self):
+        if self.cell_counts is None:
+            self.status_box.append("Count cells before exporting")
+            return
+        dir_name = self.export_entry.text()
+        path, base_filename = os.path.split(self.fname_entry.text())
+        base_filename, _ = os.path.splitext(base_filename)
+        full_fn = os.path.join(dir_name, base_filename)
+        self.status_box.append("saving " + full_fn)
+        np.savetxt(full_fn+".csv", self.cell_counts, fmt='%d', delimiter=',', 
+                   header="Yellow, Red, Green", comments="")
+        ip.saveImages(full_fn, np.any(self.yellowCellImage.image, axis=2)*255,
+                      np.any(self.redCellImage.image, axis=2)*255,
+                      np.any(self.greenCellImage.image, axis=2)*255)
         
     def run_button_callback(self):
         if self.current_tab == Tabs.red:
@@ -91,29 +110,26 @@ class Mixin:
     def count_button_callback(self):
         if(self.redCellImage.image is None or
            self.greenCellImage.image is None):
-            print("Label cells before counting cells")
+            self.status_box.append("Label cells before counting cells")
             return
         if self.yellowCellImage.image is None:
             self.update_colocal_image()
         layerVals = []
         if self.layerlines is None:
             layerVals = None
-            print("No layer lines, assuming all cells are in layer 1")
+            self.status_box.append("No layer lines, assuming all cells are in layer 1")
         else:
             for layerline in self.layerlines:
                 layerVals.append(layerline.value())
+        
         countY = ip.countCells(self.yellowCellImage.image.sum(axis=2) > 0, layerVals)
         countR = ip.countCells(self.redCellImage.image.sum(axis=2) > 0, layerVals)
         countG = ip.countCells(self.greenCellImage.image.sum(axis=2) > 0, layerVals)
-    
-        for x in countY:
-            print(x)
-            
-        for x in countR:
-            print(x)
-            
-        for x in countG:
-            print(x)
+        self.cell_counts = np.stack([countY, countR, countG], axis=1)
+        
+        self.status_box.append("Layer / Yellow / Red / Green")
+        for i,y,r,g in zip(range(len(countY)), countY, countR, countG):
+            self.status_box.append("{:<d}         {:0>3d}       {:0>3d}      {:0>3d}".format(i+1,y,r,g))
             
     def threshold_slider_callback(self, value):
         self.threshold = value / 100
