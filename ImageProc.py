@@ -1,18 +1,9 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Sep  9 18:48:03 2018
-
-@author: Greg
-"""
-
 import numpy as np
 from scipy.signal import correlate2d
 import scipy.ndimage as ndi
 import skimage.measure as skm
 from skimage import morphology
 import cv2
-from skimage.measure import regionprops, label
-
 
 
 def findCells(img, threshold=.125):
@@ -46,13 +37,15 @@ def findCells(img, threshold=.125):
 
     return cells3
 
-def countCells(bin_img, layers):
+def countCells(bin_img, layers=None):
     #labels,n = ndi.label(bin_img)
     layerNums = []
     y = 0
     x = 0 
     width = bin_img.shape[1]
     height = bin_img.shape[0]
+    if layers is None:
+        layers = [height]
    # for layer in layers:
    #     layer_img = bin_img[y:y+layer, x:width]
    #     labels, n= ndi.label(layer_img)
@@ -61,8 +54,8 @@ def countCells(bin_img, layers):
   #  layer_img = bin_img[y:height, x:width]
   #  labels, n= ndi.label(layer_img)
   #  layerNums.append(n)
-    labels = label(bin_img)
-    stats = regionprops(labels)
+    labels = skm.label(bin_img)
+    stats = skm.regionprops(labels)
     layer1 = 0
     layer2_3 = 0
     layer4 = 0

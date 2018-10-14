@@ -22,6 +22,7 @@ class CellCounterApp(QMainWindow, Layout.Mixin, Callbacks.Mixin):
         self.blueImg = None
         self.greenImg = None
         self.redImg = None
+        self.layerlines = None
         
         self.setupLayout()
         
