@@ -8,14 +8,16 @@ class Mixin:
     def setupLayout(self):
          #%% Layouts        
         toplevel_layout = QVBoxLayout()
-        hlayout_top = QHBoxLayout()
+        hlayout_top1 = QHBoxLayout()
+        hlayout_top2 = QHBoxLayout()
         hlayout_bottom = QSplitter()
         bottom_right_layout = QVBoxLayout()
         bottom_right = QWidget()
         bottom_right.setLayout(bottom_right_layout)
-        toplevel_layout.addLayout(hlayout_top)
+        toplevel_layout.addLayout(hlayout_top1)
+        toplevel_layout.addLayout(hlayout_top2)
         toplevel_layout.addWidget(hlayout_bottom)
-        tabs = QTabWidget()
+        tabs = QTabWidget(tabPosition=QTabWidget.East, tabShape=QTabWidget.Rounded)
         
         hlayout_bottom.addWidget(tabs)
         hlayout_bottom.addWidget(bottom_right)
@@ -27,9 +29,16 @@ class Mixin:
         fname_label = QLabel('Image Path:')
         self.fname_entry = QLineEdit()
         browse_button = QPushButton('Browse')
-        hlayout_top.addWidget(fname_label)
-        hlayout_top.addWidget(self.fname_entry)
-        hlayout_top.addWidget(browse_button)
+        hlayout_top1.addWidget(fname_label)
+        hlayout_top1.addWidget(self.fname_entry)
+        hlayout_top1.addWidget(browse_button)
+        
+        export_label = QLabel('Export Directory:')
+        self.export_entry = QLineEdit()
+        browse_export_button = QPushButton('Browse')
+        hlayout_top2.addWidget(export_label)
+        hlayout_top2.addWidget(self.export_entry)
+        hlayout_top2.addWidget(browse_export_button)
         
         #%% TABS
         # red tab
@@ -89,16 +98,19 @@ class Mixin:
         
         #%% CONTROL PANEL
         # run / count buttons
-        runControlBox = QGroupBox("Run / Count")
+        runControlBox = QGroupBox("Detect / Count / Export")
         bottom_right_layout.addWidget(runControlBox)
         runControlLayout = QVBoxLayout()
         runControlBox.setLayout(runControlLayout)
         #run button
-        self.run_button = QPushButton("Run", enabled=False)
+        self.run_button = QPushButton("Detect", enabled=False)
         runControlLayout.addWidget(self.run_button)
         #count button
         count_button = QPushButton("Count Cells")
         runControlLayout.addWidget(count_button)
+        #export button
+        export_button = QPushButton("Export")
+        runControlLayout.addWidget(export_button)
         
         # view/edit control box
         viewControlBox = QGroupBox("View / Edit Options")
@@ -127,7 +139,6 @@ class Mixin:
         brushsize_slider.setSliderPosition(3)
         viewLayout.addWidget(brushsize_slider)
         #single click label/unlabel
-        
         
         # algorithm control box
         detectionControlBox = QGroupBox("Detection Options")
@@ -177,17 +188,21 @@ class Mixin:
         detectionLayout.addWidget(self.variance_entry)
         
         #remove horizontal noise checkbox
-        
-        #blue channel layers
-        layersControlBox = QGroupBox("Add Layers")
-        bottom_right_layout.addWidget(layersControlBox)
-        layersControlLayout = QVBoxLayout()
-        layersControlBox.setLayout(layersControlLayout)
         #add layers button 
         self.layer_button = QPushButton("Add Layers", enabled=False)
-        layersControlLayout.addWidget(self.layer_button)
+        detectionLayout.addWidget(self.layer_button)
+        
+        statusBox = QGroupBox("Status")
+        bottom_right_layout.addWidget(statusBox)
+        statusLayout = QVBoxLayout()
+        statusBox.setLayout(statusLayout)
+        #add status window 
+        self.status_box = QTextEdit(readOnly=True)
+        statusLayout.addWidget(self.status_box)
         
         browse_button.pressed.connect(self.browse_button_callback)
+        browse_export_button.pressed.connect(self.browse_export_button_callback)
+        export_button.pressed.connect(self.export_button_callback)
         showhide_button.pressed.connect(self.showhide_button_callback)
         opacity_slider.valueChanged.connect(self.opacity_slider_callback)
         brushsize_slider.valueChanged.connect(self.brushsize_slider_callback)

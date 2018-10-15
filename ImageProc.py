@@ -3,7 +3,9 @@ from scipy.signal import correlate2d
 import scipy.ndimage as ndi
 import skimage.measure as skm
 from skimage import morphology
+from skimage.io import imsave
 import cv2
+import warnings
 
 def findCells(img, size, variance, minSize, maxSize, threshold=.125):
     
@@ -33,7 +35,6 @@ def findCells(img, size, variance, minSize, maxSize, threshold=.125):
         if sizes[i] <= maxSize:
             cells3[output == i + 1] = 255
     cells3=cells3.astype(np.uint8)
-
 
     return cells3
 
@@ -145,3 +146,10 @@ def addLayers(blue):
                 break
     
     return layer1End, layer2_3End, layer4End, layer5End
+
+def saveImages(filename, yellow, red, green):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        imsave(filename + "_yellow.png", yellow)
+        imsave(filename + "_red.png", red)
+        imsave(filename + "_green.png", green)
