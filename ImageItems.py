@@ -10,25 +10,31 @@ class DrawingImage(pg.ImageItem):
     
     def __init__(self, c, image=None, **kargs):
         pg.ImageItem.__init__(self, image, **kargs)
-        self.kern = np.zeros((3,3,3),dtype=np.uint8)
-        self.kern[:,:,DrawingImage.colors[c]] = 255
+        self.c = c
+        self.setKernel(3)
         self.x = None
         self.y = None
+        self.c = c
+        
+    def setKernel(self, size):
+        self.kern = np.zeros((size, size, 3), dtype=np.uint8)
+        self.kern[:,:,DrawingImage.colors[self.c]] = 255
+        self.centerValue = int((size-1)/2)
     
     def mouseClickEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.setDrawKernel(self.kern, center=(1,1))
+            self.setDrawKernel(self.kern, center=(self.centerValue, self.centerValue))
             self.drawAt(event.pos(), event)
         if event.button() == Qt.RightButton:
-            self.setDrawKernel(self.kern*0, center=(1,1))
+            self.setDrawKernel(self.kern*0, center=(self.centerValue, self.centerValue))
             self.drawAt(event.pos(), event)
-
+        
     def mouseDragEvent(self, event):
         if event.isStart():
             if event.button() == Qt.LeftButton:
-                self.setDrawKernel(self.kern, center=(1,1))
+                self.setDrawKernel(self.kern, center=(self.centerValue, self.centerValue))
             if event.button() == Qt.RightButton:
-                self.setDrawKernel(self.kern*0, center=(1,1))
+                self.setDrawKernel(self.kern*0, center=(self.centerValue, self.centerValue))
         if event.button() in [Qt.LeftButton, Qt.RightButton]:
             
             pos = event.pos()
@@ -101,8 +107,12 @@ class HoverImage(pg.ImageItem):
     
     def __init__(self, image=None, **kargs):
         pg.ImageItem.__init__(self, image, **kargs)
-        self.kern = np.ones((3,3),dtype=np.uint8) * 255
-        self.setDrawKernel(self.kern, center=(1,1))
+        self.setKernel(3)
+    
+    def setKernel(self, size):
+        self.kern = np.ones((size, size), dtype=np.uint8) * 255
+        self.centerValue = int((size-1)/2)
+        self.setDrawKernel(self.kern, center=(self.centerValue, self.centerValue))
 
     def hoverEvent(self, event):
         if not event.isExit():
