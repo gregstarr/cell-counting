@@ -36,7 +36,6 @@ class Mixin:
         self.redHoverImage.setImage(np.zeros_like(self.redImg.T, dtype=np.uint8))
         self.greenBackgroundImage.setImage(self.greenImg.astype(np.uint8).T)
         self.greenHoverImage.setImage(np.zeros_like(self.greenImg.T, dtype=np.uint8))
-        self.yellowBackgroundImage.setImage(im.astype(np.uint8).transpose(1,0,2))
         if self.current_tab in [Tabs.red, Tabs.green]:
             self.run_button.setEnabled(True)
             
@@ -58,7 +57,14 @@ class Mixin:
         ip.saveImages(full_fn, np.any(self.yellowCellImage.image, axis=2)*255,
                       np.any(self.redCellImage.image, axis=2)*255,
                       np.any(self.greenCellImage.image, axis=2)*255)
-        
+    
+    def crop_button_callback(self):
+        if self.current_tab == Tabs.red:
+            if self.redImg is None:
+                return
+            region =  pg.PolyLineROI([[0,0], [10,10], [10,30], [30,10]], closed = True)
+            self.redVb.addItem(region)
+    
     def run_button_callback(self):
         if self.current_tab == Tabs.red:
             if self.redImg is None:
@@ -114,8 +120,9 @@ class Mixin:
         return layer_function
        
     def update_colocal_image(self):
-        colocal = (self.greenCellImage.image[:,:,1] > 0) * (self.redCellImage.image[:,:,0] > 0)
-        colocal = np.stack([colocal*255, colocal*255, np.zeros_like(colocal,dtype=np.uint8)], axis=2)
+        colocal = np.stack([(self.redCellImage.image[:,:,0] > 0)*255, 
+                            (self.greenCellImage.image[:,:,1] > 0)*255, 
+                            np.zeros_like(self.redCellImage.image[:,:,0])], axis=2)
         self.yellowCellImage.setImage(colocal)
                 
     def tab_changed_callback(self, index):
@@ -143,7 +150,7 @@ class Mixin:
         if self.yellowCellImage.image is None:
             self.update_colocal_image()
         layerVals = []
-        if self.layerlines is None:
+        if self.layerlinesB is None:
             layerVals = None
             self.status_box.append("No layer lines, assuming all cells are in layer 1")
         else:

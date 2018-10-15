@@ -14,7 +14,6 @@ class DrawingImage(pg.ImageItem):
         self.setKernel(3)
         self.x = None
         self.y = None
-        self.c = c
         
     def setKernel(self, size):
         self.kern = np.zeros((size, size, 3), dtype=np.uint8)
@@ -121,4 +120,5 @@ class HoverImage(pg.ImageItem):
             self.drawAt(event.pos(), event)
         else:
             self.image[:,:] = 0
-            self.updateImage()
+            self.updateImage()    
+

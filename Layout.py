@@ -87,11 +87,9 @@ class Mixin:
         yellowTabLayout = QHBoxLayout(yellowTab)
         yellowTab.setLayout(yellowTabLayout)
         tabs.addTab(yellowTab, "Yellow")
-        self.yellowBackgroundImage = pg.ImageItem(opacity=1, border=pg.mkPen('y',width=5))
-        self.yellowCellImage = pg.ImageItem(compositionMode=pg.QtGui.QPainter.CompositionMode_Plus, opacity=self.opacity)
+        self.yellowCellImage = pg.ImageItem(opacity=1)
         self.yellowView = pg.GraphicsView(parent=yellowTab)
         self.yellowVb = pg.ViewBox(lockAspect=True)
-        self.yellowVb.addItem(self.yellowBackgroundImage)
         self.yellowVb.addItem(self.yellowCellImage)
         self.yellowView.setCentralItem(self.yellowVb)
         yellowTabLayout.addWidget(self.yellowView) 
@@ -117,6 +115,11 @@ class Mixin:
         bottom_right_layout.addWidget(viewControlBox)
         viewLayout = QVBoxLayout()
         viewControlBox.setLayout(viewLayout)
+        #crop 
+        crop_button = QPushButton("Crop")
+        viewLayout.addWidget(crop_button)
+        self.rubberband = QRubberBand(QRubberBand.Rectangle, self)
+        
         #show/hide
         showhide_button = QPushButton("Show / Hide Cells")
         viewLayout.addWidget(showhide_button)
@@ -203,6 +206,7 @@ class Mixin:
         browse_button.pressed.connect(self.browse_button_callback)
         browse_export_button.pressed.connect(self.browse_export_button_callback)
         export_button.pressed.connect(self.export_button_callback)
+        crop_button.pressed.connect(self.crop_button_callback)
         showhide_button.pressed.connect(self.showhide_button_callback)
         opacity_slider.valueChanged.connect(self.opacity_slider_callback)
         brushsize_slider.valueChanged.connect(self.brushsize_slider_callback)

@@ -26,7 +26,7 @@ class CellCounterApp(QMainWindow, Layout.Mixin, Callbacks.Mixin):
         self.blueImg = None
         self.greenImg = None
         self.redImg = None
-        self.layerlines = None
+        self.layerlinesB = None
         self.cell_counts = None
         
         self.setupLayout()
