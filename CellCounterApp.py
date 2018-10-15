@@ -19,6 +19,10 @@ class CellCounterApp(QMainWindow, Layout.Mixin, Callbacks.Mixin):
         self.opacity = .75
         self.brushsize = 3
         self.tempsize = 10
+        self.variance = 4
+        self.minSize = 10
+        self.maxSize = 200
+        self.showCells = True
         self.blueImg = None
         self.greenImg = None
         self.redImg = None
