@@ -9,6 +9,8 @@ from scipy.optimize import linprog
 import numpy as np
 import matplotlib.pyplot as plt
 
+np.random.seed()
+
 n = 100
 
 x = np.arange(n)
@@ -38,6 +40,7 @@ for i in range(n-1):
 Aeq = np.concatenate([np.eye(n), np.eye(n), np.zeros((n,1))], axis=1)
 beq = np.ones(Aeq.shape[0])
 c = np.zeros(2*n+1)
+c[n:2*n] = -.5
 c[-1] = 1
 
 result = linprog(c, Aub, bub, Aeq, beq)
