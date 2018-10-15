@@ -5,15 +5,16 @@ import skimage.measure as skm
 from skimage import morphology
 import cv2
 
-
-def findCells(img, threshold=.125):
+def findCells(img, size, variance, minSize, maxSize, threshold=.125):
     
     # Add noise to blank pixels
     img_w_noise = addHorizontalNoise(img)
     
     # create gaussian image cell template
-    var = 4
-    X,Y = np.meshgrid(np.arange(-9.5,10.5),np.arange(-9.5,10.5))
+    var = variance
+    low = -(size-0.5)   
+    high = size+0.5
+    X,Y = np.meshgrid(np.arange(low, high), np.arange(low, high))
     temp = np.exp(-.5*((X**2+Y**2)/var))
     
     # correlate with green image
@@ -23,14 +24,13 @@ def findCells(img, threshold=.125):
     # threshold
     cells = xc > xc.max() * threshold
     
-    cells2 = morphology.remove_small_objects(cells, min_size=15, connectivity=2)
+    cells2 = morphology.remove_small_objects(cells, min_size=minSize, connectivity=2)
     cells2=cells2.astype(np.uint8)
     nb_components, output, stats, centroids = cv2.connectedComponentsWithStats(cells2, connectivity=8)
-    sizes = stats[1:, -1]; nb_components = nb_components - 1
-    max_size = 200  
+    sizes = stats[1:, -1]; nb_components = nb_components - 1 
     cells3 = np.zeros((output.shape))
     for i in range(0, nb_components):
-        if sizes[i] <= max_size:
+        if sizes[i] <= maxSize:
             cells3[output == i + 1] = 255
     cells3=cells3.astype(np.uint8)
 

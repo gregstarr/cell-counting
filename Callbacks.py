@@ -44,14 +44,14 @@ class Mixin:
         if self.current_tab == Tabs.red:
             if self.redImg is None:
                 return
-            redCells = ip.findCells(self.redImg, self.threshold)
+            redCells = ip.findCells(self.redImg, self.tempsize, self.variance, self.minSize, self.maxSize, self.threshold)
             redCells = np.insert(np.zeros((redCells.shape[1],redCells.shape[0],2),
                                           dtype=np.uint8), 0, redCells.T, axis=2)
             self.redCellImage.setImage(redCells)
         elif self.current_tab == Tabs.green:
             if self.greenImg is None:
                 return
-            greenCells = ip.findCells(self.greenImg, self.threshold)
+            greenCells = ip.findCells(self.greenImg, self.tempsize, self.variance, self.minSize, self.maxSize, self.threshold)
             greenCells = np.insert(np.zeros((greenCells.shape[1],greenCells.shape[0],2),
                                             dtype=np.uint8), 1, greenCells.T, axis=2)
             self.greenCellImage.setImage(greenCells)
@@ -59,13 +59,41 @@ class Mixin:
     def layer_button_callback(self):
         if self.current_tab == Tabs.blue and self.blueImg is not None:
             layers = ip.addLayers(self.blueImg)
-            self.layerlines = []
+            self.layerlinesB = []
+            self.layerlinesR = []
+            self.layerlinesG = []
+            self.layerlinesY = []
             for layer in layers:
-                inf = pg.InfiniteLine(movable=True, angle=0)
-                inf.setValue(layer)
-                self.blueVb.addItem(inf)
-                self.layerlines.append(inf)
-                
+                infB = pg.InfiniteLine(movable=True, angle=0)
+                infR = pg.InfiniteLine(movable=False, angle=0)
+                infG = pg.InfiniteLine(movable=False, angle=0)
+                infY = pg.InfiniteLine(movable=False, angle=0)
+                infB.setValue(layer)
+                infR.setValue(layer)
+                infG.setValue(layer)
+                infY.setValue(layer)                
+                self.blueVb.addItem(infB)
+                self.redVb.addItem(infR)
+                self.greenVb.addItem(infG)
+                self.yellowVb.addItem(infY)
+                self.layerlinesB.append(infB)
+                self.layerlinesR.append(infR)
+                self.layerlinesG.append(infG)
+                self.layerlinesY.append(infY)
+            self.layerlinesB[0].sigPositionChangeFinished.connect(self.change_lines(0))
+            self.layerlinesB[1].sigPositionChangeFinished.connect(self.change_lines(1))
+            self.layerlinesB[2].sigPositionChangeFinished.connect(self.change_lines(2))
+            self.layerlinesB[3].sigPositionChangeFinished.connect(self.change_lines(3))
+
+    def change_lines(self, lineNum):
+        
+        def layer_function():
+            self.layerlinesR[lineNum].setValue(self.layerlinesB[lineNum].value())
+            self.layerlinesG[lineNum].setValue(self.layerlinesB[lineNum].value())
+            self.layerlinesY[lineNum].setValue(self.layerlinesB[lineNum].value())
+
+        return layer_function
+       
     def update_colocal_image(self):
         colocal = (self.greenCellImage.image[:,:,1] > 0) * (self.redCellImage.image[:,:,0] > 0)
         colocal = np.stack([colocal*255, colocal*255, np.zeros_like(colocal,dtype=np.uint8)], axis=2)
@@ -100,7 +128,7 @@ class Mixin:
             layerVals = None
             print("No layer lines, assuming all cells are in layer 1")
         else:
-            for layerline in self.layerlines:
+            for layerline in self.layerlinesB:
                 layerVals.append(layerline.value())
         countY = ip.countCells(self.yellowCellImage.image.sum(axis=2) > 0, layerVals)
         countR = ip.countCells(self.redCellImage.image.sum(axis=2) > 0, layerVals)
@@ -118,10 +146,21 @@ class Mixin:
     def threshold_slider_callback(self, value):
         self.threshold = value / 100
         self.threshold_label.setText("Detection Threshold: {}".format(self.threshold))
+
+    def min_slider_callback(self, value):
+        self.minSize = value
+        self.min_label.setText("Minimum Cell Size: {}".format(self.minSize))
         
+    def max_slider_callback(self, value):
+        self.maxSize = value
+        self.max_label.setText("Maximum Cell Size: {}".format(self.maxSize))
+    
     def tempsize_slider_callback(self, value):
         self.tempsize = value
         self.tempsize_label.setText("Template Size: {}".format(self.tempsize))
+        
+    def variance_entry_callback(self):
+        self.variance = float(self.variance_entry.text())
     
     def opacity_slider_callback(self, value):
         self.opacity = value/100
@@ -131,8 +170,28 @@ class Mixin:
         self.yellowCellImage.setOpacity(self.opacity)
     
     def showhide_button_callback(self):
-        return
-    
+        if self.showCells:
+            if self.current_tab == Tabs.red:
+                self.redCellImage.setOpacity(0)
+            elif self.current_tab == Tabs.green:
+                self.greenCellImage.setOpacity(0)
+            elif self.current_tab == Tabs.yellow:
+                self.yellowCellImage.setOpacity(0)
+            self.showCells = False 
+
+        else:
+            if self.current_tab == Tabs.red:
+                self.redCellImage.setOpacity(self.opacity)
+            elif self.current_tab == Tabs.green:
+                self.greenCellImage.setOpacity(self.opacity)
+            elif self.current_tab == Tabs.yellow:
+                self.yellowCellImage.setOpacity(self.opacity)
+            self.showCells = True 
+   
     def brushsize_slider_callback(self, value):
         self.brushsize = value
         self.brushsize_label.setText("Brush Size: {}".format(self.brushsize))
+        self.redCellImage.setKernel(self.brushsize)
+        self.redHoverImage.setKernel(self.brushsize)
+        self.greenCellImage.setKernel(self.brushsize)
+        self.greenHoverImage.setKernel(self.brushsize)
