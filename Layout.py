@@ -10,12 +10,14 @@ class Mixin:
         toplevel_layout = QVBoxLayout()
         hlayout_top1 = QHBoxLayout()
         hlayout_top2 = QHBoxLayout()
+        hlayout_top3 = QHBoxLayout()
         hlayout_bottom = QSplitter()
         bottom_right_layout = QVBoxLayout()
         bottom_right = QWidget()
         bottom_right.setLayout(bottom_right_layout)
         toplevel_layout.addLayout(hlayout_top1)
         toplevel_layout.addLayout(hlayout_top2)
+        toplevel_layout.addLayout(hlayout_top3)
         toplevel_layout.addWidget(hlayout_bottom)
         tabs = QTabWidget(tabPosition=QTabWidget.East, tabShape=QTabWidget.Rounded)
         
@@ -33,14 +35,59 @@ class Mixin:
         hlayout_top1.addWidget(self.fname_entry)
         hlayout_top1.addWidget(browse_button)
         
+        #file Selection for allen brain atlas
+        allen_label = QLabel('Allen Brain Atlas Image Path: ')
+        self.allen_entry = QLineEdit()
+        browse_button_allen = QPushButton('Browse')
+        hlayout_top2.addWidget(allen_label)
+        hlayout_top2.addWidget(self.allen_entry)
+        hlayout_top2.addWidget(browse_button_allen)        
+        
         export_label = QLabel('Export Directory:')
         self.export_entry = QLineEdit()
         browse_export_button = QPushButton('Browse')
-        hlayout_top2.addWidget(export_label)
-        hlayout_top2.addWidget(self.export_entry)
-        hlayout_top2.addWidget(browse_export_button)
+        hlayout_top3.addWidget(export_label)
+        hlayout_top3.addWidget(self.export_entry)
+        hlayout_top3.addWidget(browse_export_button)
         
         #%% TABS
+        
+        #full Image Tab
+        imTab = QWidget()
+        imTabLayout = QHBoxLayout(imTab)
+        imTab.setLayout(imTabLayout)
+        tabs.addTab(imTab, "Full Image")
+        self.imBackgroundImage = pg.ImageItem()
+        imView = pg.GraphicsView(parent = imTab)
+        self.imVb = pg.ViewBox(lockAspect=True)
+        self.imVb.addItem(self.imBackgroundImage)
+        imView.setCentralItem(self.imVb)
+        imTabLayout.addWidget(imView)        
+        
+        #allen brain atlas tab 
+        atlasTab = QWidget()
+        atlasTabLayout = QHBoxLayout(atlasTab)
+        atlasTab.setLayout(atlasTabLayout)
+        tabs.addTab(atlasTab, "Allen Brain Atlas")
+        self.atlasBackgroundImage = pg.ImageItem()
+        atlasView = pg.GraphicsView(parent = atlasTab)
+        self.atlasVb = pg.ViewBox(lockAspect=True)
+        self.atlasVb.addItem(self.atlasBackgroundImage)
+        atlasView.setCentralItem(self.atlasVb)
+        atlasTabLayout.addWidget(atlasView)
+        
+        #merge/crop tab
+        mergeTab = QWidget()
+        mergeTabLayout = QHBoxLayout(mergeTab)
+        mergeTab.setLayout(mergeTabLayout)
+        tabs.addTab(mergeTab, "Merge/Crop")
+        mergeView = pg.GraphicsView(parent = mergeTab)
+        self.mergeVb = pg.ViewBox(lockAspect=True)
+        self.imPic = pg.ImageItem()
+        self.mergeVb.addItem(self.imPic)
+        mergeView.setCentralItem(self.mergeVb)
+        mergeTabLayout.addWidget(mergeView)
+        
         # red tab
         redTab = QWidget()
         redTabLayout = QHBoxLayout(redTab)
@@ -71,7 +118,8 @@ class Mixin:
         self.greenVb.addItem(self.greenHoverImage)
         greenView.setCentralItem(self.greenVb)
         greenTabLayout.addWidget(greenView)  
-        # blue tab
+
+        # blue tab Layers
         blueTab = QWidget()
         blueTabLayout = QHBoxLayout(blueTab)
         blueTab.setLayout(blueTabLayout)
@@ -116,9 +164,10 @@ class Mixin:
         viewLayout = QVBoxLayout()
         viewControlBox.setLayout(viewLayout)
         #crop 
-        crop_button = QPushButton("Crop")
+        crop_button = QPushButton("Crop Start")
         viewLayout.addWidget(crop_button)
-        self.rubberband = QRubberBand(QRubberBand.Rectangle, self)
+        crop_button_finish = QPushButton("Crop Finish")
+        viewLayout.addWidget(crop_button_finish)
         
         #show/hide
         showhide_button = QPushButton("Show / Hide Cells")
@@ -204,9 +253,11 @@ class Mixin:
         statusLayout.addWidget(self.status_box)
         
         browse_button.pressed.connect(self.browse_button_callback)
+        browse_button_allen.pressed.connect(self.browse_button_allen_callback)
         browse_export_button.pressed.connect(self.browse_export_button_callback)
         export_button.pressed.connect(self.export_button_callback)
         crop_button.pressed.connect(self.crop_button_callback)
+        crop_button_finish.pressed.connect(self.crop)
         showhide_button.pressed.connect(self.showhide_button_callback)
         opacity_slider.valueChanged.connect(self.opacity_slider_callback)
         brushsize_slider.valueChanged.connect(self.brushsize_slider_callback)

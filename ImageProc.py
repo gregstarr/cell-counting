@@ -22,7 +22,6 @@ def findCells(img, size, variance, minSize, maxSize, threshold=.125):
     # correlate with green image
     xc = correlate2d(img_w_noise, temp-temp.mean(), 'valid')
     xc = ndi.interpolation.shift(xc, [temp.shape[1]/2,temp.shape[0]/2])
-    
     # threshold
     cells = xc > xc.max() * threshold
     

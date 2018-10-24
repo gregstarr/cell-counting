@@ -120,5 +120,6 @@ class HoverImage(pg.ImageItem):
             self.drawAt(event.pos(), event)
         else:
             self.image[:,:] = 0
-            self.updateImage()    
+            self.updateImage()
+
 

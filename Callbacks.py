@@ -9,10 +9,13 @@ import os
 from enum import IntEnum
 
 class Tabs(IntEnum):
-    red = 0
-    green = 1
-    blue = 2
-    yellow = 3
+    red = 3
+    green = 4
+    blue = 5
+    yellow = 6
+    allen = 1
+    full = 0
+    merge = 2
 
 class Mixin:
     def browse_button_callback(self):
@@ -22,11 +25,15 @@ class Mixin:
             return
         self.fname_entry.setText(filename)
         # Open Image
-        im = cv2.imread(filename)
-        if im is None:
+        self.im = cv2.imread(filename)
+        self.imBackgroundImage.setImage(self.im)
+        self.imBackgroundImage.rotate(-90)
+        self.imPic.setImage(self.im)
+        self.imPic.rotate(-90)        
+        if self.im is None:
             self.status_box.append("Invalid image")
             return
-        self.blueImg, self.greenImg, self.redImg = cv2.split(im)
+        self.blueImg, self.greenImg, self.redImg = cv2.split(self.im)
         if self.blueImg.sum() == 0:
             self.status_box.append("Selected image has no blue channel")
             self.blueImg = None
@@ -38,7 +45,21 @@ class Mixin:
         self.greenHoverImage.setImage(np.zeros_like(self.greenImg.T, dtype=np.uint8))
         if self.current_tab in [Tabs.red, Tabs.green]:
             self.run_button.setEnabled(True)
-            
+
+    def browse_button_allen_callback(self):
+        filename, _ = QFileDialog.getOpenFileName(self,"Select Image File","./images","JPG Files(*.jpg);;All Files (*)")
+        if not os.path.isfile(filename):
+            self.status_box.append("User pressed cancel or selected invalid file")
+            return
+        self.allen_entry.setText(filename)     
+        # Open Image
+        self.atlasImg = cv2.imread(filename)
+        if self.atlasImg is None:
+            self.status_box.append("Invalid image")
+            return
+        self.atlasBackgroundImage.setImage(self.atlasImg)
+        self.atlasBackgroundImage.rotate(-90)
+        
     def browse_export_button_callback(self):
         dirname = QFileDialog.getExistingDirectory(self,"Select export location","./",QFileDialog.ShowDirsOnly)
         self.export_entry.setText(dirname)
@@ -59,11 +80,29 @@ class Mixin:
                       np.any(self.greenCellImage.image, axis=2)*255)
     
     def crop_button_callback(self):
-        if self.current_tab == Tabs.red:
-            if self.redImg is None:
-                return
-            region =  pg.PolyLineROI([[0,0], [10,10], [10,30], [30,10]], closed = True)
-            self.redVb.addItem(region)
+        g = pg.GridItem()
+        self.mergeVb.addItem(g)
+        r4 = pg.ROI([0,0], [100,100], removable=True)
+        r4.addScaleHandle([1,0], [0.5, 0.5])
+        r4.addScaleHandle([0,1], [0.5, 0.5])
+        arr = np.random.rand(100,100)
+        img4 = pg.ImageItem(arr)
+        self.mergeVb.addItem(r4)
+        img4.setParentItem(r4)
+#        if self.current_tab == Tabs.merge:
+#            width = self.atlasImg.shape[1]
+#            height = self.atlasImg.shape[0]
+#            self.atlasRegion = pg.ROI([0,0],[height, width], removable=True)
+#            self.atlasRegion.addScaleHandle([0,0], [.5, .5])
+#            self.atlasRegion.addScaleHandle([1, 1], [.5, .5])
+#            self.atlas = pg.ImageItem(self.atlasImg, opacity = 0.75)
+#            self.mergeVb.addItem(self.atlasRegion)
+#            self.atlas.setParentItem(self.atlasRegion)
+            #self.region =  pg.PolyLineROI([[width/2,0], [width/2,-height],[width,-height], [width,0]], closed = True)
+           # self.atlasVb.addItem(self.region)
+    
+    def crop(self):
+        self.atlasBackgroundImage.setImage(self.region.getArrayRegion(self.atlasImg, self.atlasBackgroundImage))
     
     def run_button_callback(self):
         if self.current_tab == Tabs.red:
