@@ -20,8 +20,7 @@ def findCells(img, size, variance, minSize, maxSize, threshold=.125):
     temp = np.exp(-.5*((X**2+Y**2)/var))
     
     # correlate with green image
-    xc = correlate2d(img_w_noise, temp-temp.mean(), 'valid')
-    xc = ndi.interpolation.shift(xc, [temp.shape[1]/2,temp.shape[0]/2])
+    xc = correlate2d(img_w_noise, temp-temp.mean(), 'same')
     # threshold
     cells = xc > xc.max() * threshold
     
@@ -38,22 +37,13 @@ def findCells(img, size, variance, minSize, maxSize, threshold=.125):
     return cells3
 
 def countCells(bin_img, layers=None):
-    #labels,n = ndi.label(bin_img)
     layerNums = []
     y = 0
     x = 0 
-    width = bin_img.shape[1]
     height = bin_img.shape[0]
     if layers is None:
         layers = [height]
-   # for layer in layers:
-   #     layer_img = bin_img[y:y+layer, x:width]
-   #     labels, n= ndi.label(layer_img)
-  #      layerNums.append(n)
-  #      y = y+layer
-  #  layer_img = bin_img[y:height, x:width]
-  #  labels, n= ndi.label(layer_img)
-  #  layerNums.append(n)
+        
     labels = skm.label(bin_img)
     stats = skm.regionprops(labels)
     layer1 = 0
@@ -63,16 +53,16 @@ def countCells(bin_img, layers=None):
     layer6 = 0
     
     for prop in stats:
-        y, x = prop.centroid
-        if 0<y<=layers[0]:
+        x, y = prop.centroid
+        if y <= layers[0]:
             layer1+=1
-        elif layers[0]<y<=layers[1]:
+        elif layers[0] < y <= layers[1]:
             layer2_3+=1
-        elif layers[1]<y<=layers[2]:
+        elif layers[1] < y <= layers[2]:
             layer4+=1
-        elif layers[2]<y<=layers[3]:
+        elif layers[2] < y <= layers[3]:
             layer5+=1
-        elif layers[3]<y<=height:
+        elif layers[3] < y:
             layer6+=1
     
     layerNums.append(layer1)

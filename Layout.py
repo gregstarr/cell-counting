@@ -2,6 +2,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from ImageItems import DrawingImage, HoverImage
+from ColorChannel import Channel, DetectionChannel, ResultsChannel, LayerChannel
 import pyqtgraph as pg
 
 class Mixin:
@@ -35,14 +36,6 @@ class Mixin:
         hlayout_top1.addWidget(self.fname_entry)
         hlayout_top1.addWidget(browse_button)
         
-        #file Selection for allen brain atlas
-        allen_label = QLabel('Allen Brain Atlas Image Path: ')
-        self.allen_entry = QLineEdit()
-        browse_button_allen = QPushButton('Browse')
-        hlayout_top2.addWidget(allen_label)
-        hlayout_top2.addWidget(self.allen_entry)
-        hlayout_top2.addWidget(browse_button_allen)        
-        
         export_label = QLabel('Export Directory:')
         self.export_entry = QLineEdit()
         browse_export_button = QPushButton('Browse')
@@ -50,97 +43,27 @@ class Mixin:
         hlayout_top3.addWidget(self.export_entry)
         hlayout_top3.addWidget(browse_export_button)
         
-        #%% TABS
-        
-        #full Image Tab
-        imTab = QWidget()
-        imTabLayout = QHBoxLayout(imTab)
-        imTab.setLayout(imTabLayout)
-        tabs.addTab(imTab, "Full Image")
-        self.imBackgroundImage = pg.ImageItem()
-        imView = pg.GraphicsView(parent = imTab)
-        self.imVb = pg.ViewBox(lockAspect=True)
-        self.imVb.addItem(self.imBackgroundImage)
-        imView.setCentralItem(self.imVb)
-        imTabLayout.addWidget(imView)        
-        
-        #allen brain atlas tab 
-        atlasTab = QWidget()
-        atlasTabLayout = QHBoxLayout(atlasTab)
-        atlasTab.setLayout(atlasTabLayout)
-        tabs.addTab(atlasTab, "Allen Brain Atlas")
-        self.atlasBackgroundImage = pg.ImageItem()
-        atlasView = pg.GraphicsView(parent = atlasTab)
-        self.atlasVb = pg.ViewBox(lockAspect=True)
-        self.atlasVb.addItem(self.atlasBackgroundImage)
-        atlasView.setCentralItem(self.atlasVb)
-        atlasTabLayout.addWidget(atlasView)
-        
-        #merge/crop tab
-        mergeTab = QWidget()
-        mergeTabLayout = QHBoxLayout(mergeTab)
-        mergeTab.setLayout(mergeTabLayout)
-        tabs.addTab(mergeTab, "Merge/Crop")
-        mergeView = pg.GraphicsView(parent = mergeTab)
-        self.mergeVb = pg.ViewBox(lockAspect=True)
-        self.imPic = pg.ImageItem()
-        self.mergeVb.addItem(self.imPic)
-        mergeView.setCentralItem(self.mergeVb)
-        mergeTabLayout.addWidget(mergeView)
-        
+        #%% TABS        
         # red tab
         redTab = QWidget()
-        redTabLayout = QHBoxLayout(redTab)
-        redTab.setLayout(redTabLayout)
         tabs.addTab(redTab, "Red")
-        self.redBackgroundImage = pg.ImageItem(opacity=1, border=pg.mkPen('r',width=5))
-        self.redCellImage = DrawingImage('r', compositionMode=pg.QtGui.QPainter.CompositionMode_Plus, opacity=self.opacity)
-        self.redHoverImage = HoverImage(opacity=self.opacity, compositionMode=pg.QtGui.QPainter.CompositionMode_Plus)
-        redView = pg.GraphicsView(parent=redTab)
-        self.redVb = pg.ViewBox(lockAspect=True)
-        self.redVb.addItem(self.redBackgroundImage)
-        self.redVb.addItem(self.redCellImage)
-        self.redVb.addItem(self.redHoverImage)
-        redView.setCentralItem(self.redVb)
-        redTabLayout.addWidget(redView)
+        self.redChannel = DetectionChannel(redTab, 'r', name="Red")
+        self.channels.append(self.redChannel)
         # green tab
         greenTab = QWidget()
-        greenTabLayout = QHBoxLayout(greenTab)
-        greenTab.setLayout(greenTabLayout)
         tabs.addTab(greenTab, "Green")
-        self.greenBackgroundImage = pg.ImageItem(opacity=1, border=pg.mkPen('g',width=5))
-        self.greenCellImage = DrawingImage('g', compositionMode=pg.QtGui.QPainter.CompositionMode_Plus, opacity=self.opacity)
-        self.greenHoverImage = HoverImage(opacity=self.opacity, compositionMode=pg.QtGui.QPainter.CompositionMode_Plus)
-        greenView = pg.GraphicsView(parent=greenTab)
-        self.greenVb = pg.ViewBox(lockAspect=True)
-        self.greenVb.addItem(self.greenBackgroundImage)
-        self.greenVb.addItem(self.greenCellImage)
-        self.greenVb.addItem(self.greenHoverImage)
-        greenView.setCentralItem(self.greenVb)
-        greenTabLayout.addWidget(greenView)  
-
+        self.greenChannel = DetectionChannel(greenTab, 'g', name="Green")
+        self.channels.append(self.greenChannel)
         # blue tab Layers
         blueTab = QWidget()
-        blueTabLayout = QHBoxLayout(blueTab)
-        blueTab.setLayout(blueTabLayout)
         tabs.addTab(blueTab, "Blue")
-        self.blueBackgroundImage = pg.ImageItem(opacity=1, border=pg.mkPen('b',width=5))
-        blueView = pg.GraphicsView(parent=blueTab)
-        self.blueVb = pg.ViewBox(lockAspect=True)
-        self.blueVb.addItem(self.blueBackgroundImage)
-        blueView.setCentralItem(self.blueVb)
-        blueTabLayout.addWidget(blueView)  
+        self.blueChannel = LayerChannel(blueTab, 'b', name="Blue")
+        self.channels.append(self.blueChannel)
         # yellow tab
         yellowTab = QWidget()
-        yellowTabLayout = QHBoxLayout(yellowTab)
-        yellowTab.setLayout(yellowTabLayout)
         tabs.addTab(yellowTab, "Yellow")
-        self.yellowCellImage = pg.ImageItem(opacity=1)
-        self.yellowView = pg.GraphicsView(parent=yellowTab)
-        self.yellowVb = pg.ViewBox(lockAspect=True)
-        self.yellowVb.addItem(self.yellowCellImage)
-        self.yellowView.setCentralItem(self.yellowVb)
-        yellowTabLayout.addWidget(self.yellowView) 
+        self.resultChannel = ResultsChannel(yellowTab, 'y', [self.redChannel, self.greenChannel], name="Yellow")
+        self.channels.append(self.resultChannel)
         
         #%% CONTROL PANEL
         # run / count buttons
@@ -163,24 +86,14 @@ class Mixin:
         bottom_right_layout.addWidget(viewControlBox)
         viewLayout = QVBoxLayout()
         viewControlBox.setLayout(viewLayout)
-        #crop 
-        crop_button = QPushButton("Crop Start")
-        viewLayout.addWidget(crop_button)
-        crop_button_finish = QPushButton("Crop Finish")
-        viewLayout.addWidget(crop_button_finish)
         
         #show/hide
-        showhide_button = QPushButton("Show / Hide Cells")
-        viewLayout.addWidget(showhide_button)
-        #opacity slider
-        self.opacity_label = QLabel("Cell Image Opacity: {}".format(self.opacity))
-        viewLayout.addWidget(self.opacity_label)
-        opacity_slider = QSlider(Qt.Horizontal)
-        opacity_slider.setMinimum(0)
-        opacity_slider.setMaximum(100)
-        opacity_slider.setTickInterval(1)
-        opacity_slider.setSliderPosition(int(self.opacity*100))
-        viewLayout.addWidget(opacity_slider)
+        self.showhidecells_button = QCheckBox("Show Labels")
+        self.showhidecells_button.setChecked(True)
+        viewLayout.addWidget(self.showhidecells_button)
+        self.showhidebg_button = QCheckBox("Show Background")
+        self.showhidebg_button.setChecked(True)
+        viewLayout.addWidget(self.showhidebg_button)
         #brush size slider
         self.brushsize_label = QLabel("Brush Size: {}".format(self.brushsize))
         viewLayout.addWidget(self.brushsize_label)
@@ -204,7 +117,7 @@ class Mixin:
         threshold_slider.setMinimum(0)
         threshold_slider.setMaximum(100)
         threshold_slider.setTickInterval(1)
-        threshold_slider.setSliderPosition(12)
+        threshold_slider.setSliderPosition(20)
         detectionLayout.addWidget(threshold_slider)
         #minimum slider
         self.min_label = QLabel("Minimum Cell Size: {}".format(self.minSize))
@@ -234,8 +147,8 @@ class Mixin:
         tempsize_slider.setSliderPosition(10)
         detectionLayout.addWidget(tempsize_slider)
         #template variance
-        variance_label = QLabel("Template Variance:".format(self.variance))
-        detectionLayout.addWidget(variance_label)
+        self.variance_label = QLabel("Template Variance: {}".format(self.variance))
+        detectionLayout.addWidget(self.variance_label)
         self.variance_entry = QLineEdit()
         detectionLayout.addWidget(self.variance_entry)
         
@@ -253,13 +166,10 @@ class Mixin:
         statusLayout.addWidget(self.status_box)
         
         browse_button.pressed.connect(self.browse_button_callback)
-        browse_button_allen.pressed.connect(self.browse_button_allen_callback)
         browse_export_button.pressed.connect(self.browse_export_button_callback)
         export_button.pressed.connect(self.export_button_callback)
-        crop_button.pressed.connect(self.crop_button_callback)
-        crop_button_finish.pressed.connect(self.crop)
-        showhide_button.pressed.connect(self.showhide_button_callback)
-        opacity_slider.valueChanged.connect(self.opacity_slider_callback)
+        self.showhidecells_button.stateChanged.connect(self.showhidecells_button_callback)
+        self.showhidebg_button.stateChanged.connect(self.showhidebg_button_callback)
         brushsize_slider.valueChanged.connect(self.brushsize_slider_callback)
         threshold_slider.valueChanged.connect(self.threshold_slider_callback)
         min_slider.valueChanged.connect(self.min_slider_callback)    

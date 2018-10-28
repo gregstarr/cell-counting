@@ -15,19 +15,14 @@ class CellCounterApp(QMainWindow, Layout.Mixin, Callbacks.Mixin):
         super(CellCounterApp, self).__init__(*args, **kwargs)
         
         self.current_tab = 0
-        self.threshold = .12
+        self.threshold = .2
         self.opacity = .75
         self.brushsize = 3
         self.tempsize = 10
         self.variance = 4
         self.minSize = 10
         self.maxSize = 200
-        self.showCells = True
-        self.blueImg = None
-        self.greenImg = None
-        self.redImg = None
-        self.layerlinesB = None
-        self.cell_counts = None
+        self.channels = []
         
         self.setupLayout()
         

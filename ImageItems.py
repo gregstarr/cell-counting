@@ -6,7 +6,7 @@ import numpy as np
 
 class DrawingImage(pg.ImageItem):
     
-    colors = {'r':0, 'g':1, 'b':2, 'y':[0,1]}
+    colors = {'r':0, 'g':1, 'b':2}
     
     def __init__(self, c, image=None, **kargs):
         pg.ImageItem.__init__(self, image, **kargs)
