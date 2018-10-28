@@ -6,6 +6,8 @@ from skimage import morphology
 from skimage.io import imsave
 import cv2
 import warnings
+from matplotlib import pyplot as plt
+
 
 def findCells(img, size, variance, minSize, maxSize, threshold=.125):
     
@@ -56,12 +58,13 @@ def countCells(bin_img, layers=None):
   #  layerNums.append(n)
     labels = skm.label(bin_img)
     stats = skm.regionprops(labels)
+  #  plt.figure()
+#    plt.imshow(labels)
     layer1 = 0
     layer2_3 = 0
     layer4 = 0
     layer5 = 0
     layer6 = 0
-    
     for prop in stats:
         y, x = prop.centroid
         if 0<y<=layers[0]:

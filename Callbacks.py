@@ -59,6 +59,8 @@ class Mixin:
             return
         self.atlasBackgroundImage.setImage(self.atlasImg)
         self.atlasBackgroundImage.rotate(-90)
+        self.atlas.setImage(self.atlasImg)
+        self.atlas.rotate(-90)
         
     def browse_export_button_callback(self):
         dirname = QFileDialog.getExistingDirectory(self,"Select export location","./",QFileDialog.ShowDirsOnly)
@@ -80,26 +82,25 @@ class Mixin:
                       np.any(self.greenCellImage.image, axis=2)*255)
     
     def crop_button_callback(self):
-        g = pg.GridItem()
-        self.mergeVb.addItem(g)
-        r4 = pg.ROI([0,0], [100,100], removable=True)
-        r4.addScaleHandle([1,0], [0.5, 0.5])
-        r4.addScaleHandle([0,1], [0.5, 0.5])
-        arr = np.random.rand(100,100)
-        img4 = pg.ImageItem(arr)
-        self.mergeVb.addItem(r4)
-        img4.setParentItem(r4)
-#        if self.current_tab == Tabs.merge:
-#            width = self.atlasImg.shape[1]
-#            height = self.atlasImg.shape[0]
-#            self.atlasRegion = pg.ROI([0,0],[height, width], removable=True)
-#            self.atlasRegion.addScaleHandle([0,0], [.5, .5])
-#            self.atlasRegion.addScaleHandle([1, 1], [.5, .5])
-#            self.atlas = pg.ImageItem(self.atlasImg, opacity = 0.75)
-#            self.mergeVb.addItem(self.atlasRegion)
-#            self.atlas.setParentItem(self.atlasRegion)
-            #self.region =  pg.PolyLineROI([[width/2,0], [width/2,-height],[width,-height], [width,0]], closed = True)
-           # self.atlasVb.addItem(self.region)
+       # g = pg.GridItem()
+       # self.mergeVb.addItem(g)
+        #r4 = pg.ROI([0,0], [100,100], removable=True)
+        #r4.addScaleHandle([1,0], [0.5, 0.5])
+        #r4.addScaleHandle([0,1], [0.5, 0.5])
+        #arr = np.random.rand(100,100)
+        #img4 = pg.ImageItem(arr)
+        #self.mergeVb.addItem(r4)
+        #img4.setParentItem(r4)
+        if self.current_tab == Tabs.merge:
+            width = self.atlasImg.shape[1]
+            height = self.atlasImg.shape[0]
+            self.atlasRegion = pg.ROI([0,0],[height, width], removable=True)
+            self.atlasRegion.addScaleHandle([0,0], [.5, .5])
+            self.atlasRegion.addScaleHandle([1, 1], [.5, .5])
+            self.mergeVb.addItem(self.atlasRegion)
+            self.atlas.setParentItem(self.atlasRegion)
+            self.region =  pg.PolyLineROI([[width/2,0], [width/2,-height],[width,-height], [width,0]], closed = True)
+            self.atlasVb.addItem(self.region)
     
     def crop(self):
         self.atlasBackgroundImage.setImage(self.region.getArrayRegion(self.atlasImg, self.atlasBackgroundImage))
@@ -196,11 +197,10 @@ class Mixin:
             for layerline in self.layerlinesB:
                 layerVals.append(layerline.value())
         
-        countY = ip.countCells(self.yellowCellImage.image.sum(axis=2) > 0, layerVals)
+        countY = ip.countCells(self.redCellImage.image.sum(axis=2)*self.greenCellImage.image.sum(axis=2) > 0, layerVals)
         countR = ip.countCells(self.redCellImage.image.sum(axis=2) > 0, layerVals)
         countG = ip.countCells(self.greenCellImage.image.sum(axis=2) > 0, layerVals)
         self.cell_counts = np.stack([countY, countR, countG], axis=1)
-        
         self.status_box.append("Layer / Yellow / Red / Green")
         for i,y,r,g in zip(range(len(countY)), countY, countR, countG):
             self.status_box.append("{:<d}         {:0>3d}       {:0>3d}      {:0>3d}".format(i+1,y,r,g))

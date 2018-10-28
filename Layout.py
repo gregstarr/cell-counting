@@ -84,7 +84,9 @@ class Mixin:
         mergeView = pg.GraphicsView(parent = mergeTab)
         self.mergeVb = pg.ViewBox(lockAspect=True)
         self.imPic = pg.ImageItem()
+        self.atlas = pg.ImageItem(opacity = 0.75)
         self.mergeVb.addItem(self.imPic)
+        self.mergeVb.addItem(self.atlas)
         mergeView.setCentralItem(self.mergeVb)
         mergeTabLayout.addWidget(mergeView)
         
