@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 import pyqtgraph as pg
 import numpy as np
+import turtle
 
 class DrawingImage(pg.ImageItem):
     
@@ -11,29 +12,33 @@ class DrawingImage(pg.ImageItem):
     def __init__(self, c, image=None, **kargs):
         pg.ImageItem.__init__(self, image, **kargs)
         self.c = c
-        self.setKernel(3)
+        self.setKernel(5)
         self.x = None
         self.y = None
         
     def setKernel(self, size):
-        self.kern = np.zeros((size, size, 3), dtype=np.uint8)
-        self.kern[:,:,DrawingImage.colors[self.c]] = 255
         self.centerValue = int((size-1)/2)
+        self.kern = np.zeros((size, size,3), dtype=np.uint8)
+        self.mask = np.zeros((size, size, 3), dtype=np.uint8)
+        y, x = np.mgrid[-self.centerValue:size-self.centerValue, -self.centerValue:size-self.centerValue]
+        self.mask[:,:,:] = (x*x + y*y <= (size-1)/2*(size-1)/2)[:,:,None]
+        self.kern[:,:,DrawingImage.colors[self.c]]=255
+
     
     def mouseClickEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.setDrawKernel(self.kern, center=(self.centerValue, self.centerValue))
+            self.setDrawKernel(self.kern, self.mask, center=(self.centerValue, self.centerValue))
             self.drawAt(event.pos(), event)
         if event.button() == Qt.RightButton:
-            self.setDrawKernel(self.kern*0, center=(self.centerValue, self.centerValue))
+            self.setDrawKernel(self.kern*0, self.mask, center=(self.centerValue, self.centerValue))
             self.drawAt(event.pos(), event)
         
     def mouseDragEvent(self, event):
         if event.isStart():
             if event.button() == Qt.LeftButton:
-                self.setDrawKernel(self.kern, center=(self.centerValue, self.centerValue))
+                self.setDrawKernel(self.kern, self.mask, center=(self.centerValue, self.centerValue))
             if event.button() == Qt.RightButton:
-                self.setDrawKernel(self.kern*0, center=(self.centerValue, self.centerValue))
+                self.setDrawKernel(self.kern*0, self.mask, center=(self.centerValue, self.centerValue))
         if event.button() in [Qt.LeftButton, Qt.RightButton]:
             
             pos = event.pos()
@@ -106,11 +111,14 @@ class HoverImage(pg.ImageItem):
     
     def __init__(self, image=None, **kargs):
         pg.ImageItem.__init__(self, image, **kargs)
-        self.setKernel(3)
+        self.setKernel(5)
     
     def setKernel(self, size):
-        self.kern = np.ones((size, size), dtype=np.uint8) * 255
         self.centerValue = int((size-1)/2)
+        self.kern = np.zeros((size, size), dtype=np.uint8) * 255
+        y, x = np.mgrid[-self.centerValue:size-self.centerValue, -self.centerValue:size-self.centerValue]
+        mask = x*x + y*y <= (size-1)/2*(size-1)/2
+        self.kern[mask] = 255
         self.setDrawKernel(self.kern, center=(self.centerValue, self.centerValue))
 
     def hoverEvent(self, event):

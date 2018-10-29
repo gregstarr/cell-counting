@@ -99,9 +99,9 @@ class Mixin:
         viewLayout.addWidget(self.brushsize_label)
         brushsize_slider = QSlider(Qt.Horizontal)
         brushsize_slider.setMinimum(1)
-        brushsize_slider.setMaximum(10)
+        brushsize_slider.setMaximum(20)
         brushsize_slider.setTickInterval(1)
-        brushsize_slider.setSliderPosition(3)
+        brushsize_slider.setSliderPosition(self.brushsize)
         viewLayout.addWidget(brushsize_slider)
         #single click label/unlabel
         
