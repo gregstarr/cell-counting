@@ -27,6 +27,8 @@ class Mixin:
         if im is None:
             self.status_box.append("Invalid image")
             return
+        for c in self.channels:
+            c.reset()
         blueImg, greenImg, redImg = cv2.split(im)
         if blueImg.sum() == 0:
             self.status_box.append("Selected image has no blue channel")
@@ -56,7 +58,7 @@ class Mixin:
         
             
     def layer_button_callback(self):
-        if self.current_tab == Tabs.blue and self.blueChannel.hasBackground():
+        if self.current_tab == Tabs.blue and self.blueChannel.hasBackground() and not self.blueChannel.hasLayers():
             layers = self.blueChannel.addLayers()
             self.redChannel.setLayers(layers)
             self.greenChannel.setLayers(layers)
