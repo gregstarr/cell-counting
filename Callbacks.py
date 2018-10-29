@@ -9,6 +9,7 @@ import os
 from enum import IntEnum
 from ColorChannel import DetectionChannel
 
+
 class Tabs(IntEnum):
     red = 0
     green = 1

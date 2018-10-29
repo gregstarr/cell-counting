@@ -32,7 +32,12 @@ def findCells(img, size, variance, minSize, maxSize, threshold=.125):
     for i in range(0, nb_components):
         if sizes[i] <= maxSize:
             cells3[output == i + 1] = 255
+            
     cells3=cells3.astype(np.uint8)
+    cells3[:20,:] = 0
+    cells3[:,:20] = 0
+    cells3[-20:,:] = 0
+    cells3[:,-20:] = 0
 
     return cells3
 
@@ -92,47 +97,10 @@ def addHorizontalNoise(image):
 
 def addLayers(blue):
     
-    avg = np.mean(blue, axis = 1)
-    
-    rows = len(avg)
-    lowDensity = []
-    midDensity = []
-    highDensity = []
-    
-    
-    
-    for x in range(rows):
-        if avg[x]<=30:
-            lowDensity.append(x)
-        elif 30 < avg[x] <= 40:
-            midDensity.append(x)
-        elif 40 < avg[x] <= 60:
-            highDensity.append(x)     
-    
-    lenLow = len(lowDensity)
-    lenMid = len(midDensity)
-    lenHigh = len(highDensity) 
-    
-    for x in range(lenLow-1):
-       if lowDensity[x+1] - lowDensity[x] < 15:
-           layer1End = lowDensity[x+1]
-       else:
-           break
-    
-    for x in range(lenMid-1):
-        if midDensity[x] > layer1End:
-            if midDensity[x+1] - midDensity[x] < 15:
-                layer2_3End = midDensity[x+1]
-            else:
-                break
-    
-    for x in range(lenHigh-1):
-        if highDensity[x] > layer2_3End:
-            if highDensity[x+1] - highDensity[x] < 70:
-                layer4End = highDensity[x+1]
-                layer5End = highDensity[x+2]
-            else:
-                break
+    layer1End = int(.2*blue.shape[0])
+    layer2_3End = int(.4*blue.shape[0])
+    layer4End = int(.6*blue.shape[0])
+    layer5End = int(.8*blue.shape[0])
     
     return layer1End, layer2_3End, layer4End, layer5End
 

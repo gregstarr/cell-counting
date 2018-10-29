@@ -121,5 +121,3 @@ class HoverImage(pg.ImageItem):
         else:
             self.image[:,:] = 0
             self.updateImage()
-
-
