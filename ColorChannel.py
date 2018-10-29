@@ -25,10 +25,11 @@ class Channel:
         
         layout = QHBoxLayout(tab)
         tab.setLayout(layout)
-        view = pg.GraphicsView(parent=tab)
+        self.view = pg.GraphicsView(parent=tab)
         self.viewbox = pg.ViewBox(lockAspect=True)
-        view.setCentralItem(self.viewbox)
-        layout.addWidget(view)
+        self.viewbox.invertY()
+        self.view.setCentralItem(self.viewbox)
+        layout.addWidget(self.view)
         
         self.viewbox.addItem(self.background_img_item)
         
@@ -36,7 +37,7 @@ class Channel:
         
     def setBackgroundImage(self, img, align=True, setbg=True):
         if align:
-            self.background_img_item.setImage(img.T[:,::-1])
+            self.background_img_item.setImage(img.T)
         else:
             self.background_img_item.setImage(img)
         if setbg:
@@ -53,6 +54,15 @@ class Channel:
         
     def showbg(self):
         pass
+    
+    def reset(self):
+        self.viewbox.removeItem(self.background_img_item)
+        for l in self.layerlines:
+            self.viewbox.removeItem(l)
+        self.background_img_item = pg.ImageItem(opacity=1, border=pg.mkPen(self.c, width=5))
+        self.background_img = None
+        self.layerlines = []
+        self.viewbox.addItem(self.background_img_item)
         
     def setLayers(self, layers):
         for layer in layers:
@@ -60,12 +70,12 @@ class Channel:
             line.setValue(layer)
             self.viewbox.addItem(line)
             self.layerlines.append(line)
+            
+    def hasLayers(self):
+        return len(self.layerlines) != 0
     
 
 class LayerChannel(Channel):
-    
-    def hasLayers(self):
-        return len(self.layerlines) != 0
     
     def setLayers(self, layers):
         for layer in layers:
@@ -87,14 +97,40 @@ class DetectionChannel(Channel):
         
         self.label_img_item = DrawingImage(c, compositionMode=pg.QtGui.QPainter.CompositionMode_Plus, opacity=1)
         self.hover_img_item = HoverImage(opacity=1, compositionMode=pg.QtGui.QPainter.CompositionMode_Plus)
+        self.histogram_item = pg.HistogramLUTItem()
+        self.histogram_item.setImageItem(self.background_img_item)
+        self.histogram_item.setMinimumHeight(500)
+        self.histogram_item.setHistogramRange(0, 300)
+        self.histogram_state = None
         
         self.viewbox.addItem(self.label_img_item)
         self.viewbox.addItem(self.hover_img_item)
         
+        self.view.addItem(self.histogram_item)
+        
+    def reset(self):
+        super().reset()
+        self.viewbox.removeItem(self.hover_img_item)
+        self.viewbox.removeItem(self.label_img_item)
+        self.view.removeItem(self.histogram_item)
+        self.label_img_item = DrawingImage(self.c, compositionMode=pg.QtGui.QPainter.CompositionMode_Plus, opacity=1)
+        self.hover_img_item = HoverImage(opacity=1, compositionMode=pg.QtGui.QPainter.CompositionMode_Plus)
+        self.histogram_item = pg.HistogramLUTItem()
+        self.histogram_item.setImageItem(self.background_img_item)
+        self.histogram_item.setMinimumHeight(500)
+        self.histogram_item.setHistogramRange(0, 300)
+        self.histogram_state = None
+        self.viewbox.addItem(self.label_img_item)
+        self.viewbox.addItem(self.hover_img_item)
+        self.view.addItem(self.histogram_item)
+        
     def showbg(self):
         self.setBackgroundImage(self.background_img, setbg=False)
+        if self.histogram_state is not None:
+            self.histogram_item.restoreState(self.histogram_state)
 
     def hidebg(self):
+        self.histogram_state = self.histogram_item.saveState()
         self.setBackgroundImage(np.zeros_like(self.background_img), setbg=False)
         
     @property
@@ -106,13 +142,14 @@ class DetectionChannel(Channel):
     def setBackgroundImage(self, img, setbg=True):
         super().setBackgroundImage(img, setbg=setbg)
         self.hover_img_item.setImage(np.zeros_like(img.T, dtype=np.uint8))
+        self.histogram_item.setLevels(0, 255)
         
     def getLabels(self):
         im = np.any(self.label_img_item.image, axis=2)*255
-        return im.T[::-1,:]
+        return im.T
         
     def runDetection(self, ts, var, mins, maxs, th):
-        labels = ip.findCells(self.background_img[::-1,:], ts, var, mins, maxs, th)
+        labels = ip.findCells(self.background_img, ts, var, mins, maxs, th)
         im = np.zeros((labels.shape[1], labels.shape[0], 3))
         im[:,:,super().colors[self.c]] = labels.T
         self.label_img_item.setImage(im)
@@ -141,7 +178,7 @@ class ResultsChannel(Channel):
     
     def getLabels(self):
         im = (self.background_img_item.image > 0) * 255
-        return im.T[::-1,:]
+        return im.T
     
     def updateColocal(self):
         colocal = np.all(np.stack([c.label_img for c in self.channels], axis=2), axis=2) * 255
@@ -171,6 +208,8 @@ class ResultsChannel(Channel):
     
     def exportData(self, export_text, fname_text):
         ##TODO: Make more reconfigurable
+        
+        
         dir_name = export_text
         path, base_filename = os.path.split(fname_text)
         base_filename, _ = os.path.splitext(base_filename)
