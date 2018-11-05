@@ -94,14 +94,27 @@ class Mixin:
         if self.current_tab == Tabs.merge:
             width = self.atlasImg.shape[1]
             height = self.atlasImg.shape[0]
-            self.atlasRegion = pg.ROI([0,0],[height, width], removable=True)
-            self.atlasRegion.addScaleHandle([0,0], [.5, .5])
-            self.atlasRegion.addScaleHandle([1, 1], [.5, .5])
+            self.atlasRegion = pg.ROI([0,0],[width, -height], removable=False)
+            self.atlasRegion.addScaleHandle([0, 0], [1, 1], name = "handle1")
+            self.atlasRegion.addScaleHandle([1, 1], [0, 0])
+            self.atlasRegion.addRotateHandle([0,1], [0.5, 0.5])
             self.mergeVb.addItem(self.atlasRegion)
             self.atlas.setParentItem(self.atlasRegion)
-            self.region =  pg.PolyLineROI([[width/2,0], [width/2,-height],[width,-height], [width,0]], closed = True)
-            self.atlasVb.addItem(self.region)
+            self.atlasRegion.sigRegionChangeFinished.connect(self.changeSize)
+          #  self.region =  pg.PolyLineROI([[width/2,0], [width/2,-height],[width,-height], [width,0]], closed = True)
+            #self.atlasVb.addItem(self.region)
     
+    def changeSize(self):
+        width, height = self.atlasRegion.size()
+        print(width)
+        print(height)
+        handleInfo = self.atlasRegion.getSceneHandlePositions()
+        handle1 = handleInfo[0]
+        pos = handle1[1]     
+        resize = QRectF(0,0, width, height)
+        self.atlas.setRect(resize)
+        self.atlas.rotate(-90)
+
     def crop(self):
         self.atlasBackgroundImage.setImage(self.region.getArrayRegion(self.atlasImg, self.atlasBackgroundImage))
     
