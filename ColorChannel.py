@@ -181,7 +181,7 @@ class ResultsChannel(Channel):
         return im.T
     
     def updateColocal(self):
-        colocal = np.all(np.stack([c.label_img for c in self.channels], axis=2), axis=2) * 255
+        colocal = np.stack([c.label_img for c in self.channels]+[np.zeros_like(self.channels[0].label_img)], axis=2) * 255
         self.background_img_item.setImage(colocal)
         
     def countCells(self):

@@ -59,6 +59,7 @@ def countCells(bin_img, layers=None):
     
     for prop in stats:
         x, y = prop.centroid
+        print(prop)
         if y <= layers[0]:
             layer1+=1
         elif layers[0] < y <= layers[1]:
