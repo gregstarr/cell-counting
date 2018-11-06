@@ -17,7 +17,7 @@ class CellCounterApp(QMainWindow, Layout.Mixin, Callbacks.Mixin):
         self.current_tab = 0
         self.threshold = .12
         self.opacity = .75
-        self.brushsize = 3
+        self.brushsize = 5
         self.tempsize = 10
         self.variance = 4
         self.minSize = 10
