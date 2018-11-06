@@ -46,8 +46,26 @@ class Channel:
     def hasBackground(self):
         return self.background_img is not None
             
-    def updateLayers(self, layer, value):
-        self.layerlines[layer].setValue(value)
+    def updateLayers(self, layer, layerline):
+        llpos = layerline.pos()
+        self.viewbox.removeItem(self.layerlines[layer])
+        newll = pg.GraphItem()
+        pos = np.array([h.pos()+llpos for h in layerline.getHandles()])
+        adj = np.array([[i,i+1] for i in range(pos.shape[0]-1)])
+        newll.setData(pos=pos, adj=adj, pen=pg.mkPen('w', width=2))
+        self.viewbox.addItem(newll)
+        self.layerlines[layer] = newll
+        
+    def setLayerPos(self, positions):
+        for layer in range(len(self.layerlines)):
+            self.viewbox.removeItem(self.layerlines[layer])
+            newll = pg.GraphItem()
+            pos = positions[layer]
+            adj = np.array([[i,i+1] for i in range(pos.shape[0]-1)])
+            newll.setData(pos=pos, adj=adj, pen=pg.mkPen('w', width=2))
+            self.viewbox.addItem(newll)
+            self.layerlines[layer] = newll
+            
         
     def hidebg(self):
         pass
@@ -66,10 +84,12 @@ class Channel:
         
     def setLayers(self, layers):
         for layer in layers:
-            line = pg.InfiniteLine(movable=False, angle=0)
-            line.setValue(layer)
-            self.viewbox.addItem(line)
-            self.layerlines.append(line)
+            layerline = pg.GraphItem()
+            pos = np.array([[100,layer], [600,layer]])
+            adj = np.array([[0,1]])
+            layerline.setData(pos=pos, adj=adj, pen=pg.mkPen('w', width=2))
+            self.layerlines.append(layerline)
+            self.viewbox.addItem(layerline)            
             
     def hasLayers(self):
         return len(self.layerlines) != 0
@@ -79,10 +99,9 @@ class LayerChannel(Channel):
     
     def setLayers(self, layers):
         for layer in layers:
-            line = pg.InfiniteLine(movable=True, angle=0)
-            line.setValue(layer)
-            self.viewbox.addItem(line)
-            self.layerlines.append(line)
+            layerline = pg.PolyLineROI([[100,layer],[600,layer]], movable=True)
+            self.layerlines.append(layerline)
+            self.viewbox.addItem(layerline)
             
     def addLayers(self):
         layers = ip.addLayers(self.background_img)
@@ -157,8 +176,8 @@ class DetectionChannel(Channel):
     def hasLabels(self):
         return self.label_img is not None
     
-    def countCells(self, layerVals):
-        counts = ip.countCells(self.label_img > 0, layerVals)
+    def countCells(self, layers):
+        counts = ip.countCells(self.label_img > 0, layers)
         return counts
     
     def set_brushsize(self, value):
@@ -182,23 +201,23 @@ class ResultsChannel(Channel):
     
     def updateColocal(self):
         colocal = np.all(np.stack([c.label_img for c in self.channels], axis=2), axis=2) * 255
-        self.background_img_item.setImage(colocal)
+        self.setBackgroundImage(colocal, align=False)
         
     def countCells(self):
         self.updateColocal()
-        if len(self.layerlines) == 0:
-            layerVals = None
+        if self.hasLayers():
+            layers = [ll.pos for ll in self.layerlines]
         else:
-            layerVals = [layer.value() for layer in self.layerlines]
-        counts = [ip.countCells(self.background_img_item.image > 0, layerVals)]
+            layers = None
+        counts = [ip.countCells(self.background_img_item.image > 0, layers)]
         for chan in self.channels:
-            counts.append(chan.countCells(layerVals))
+            counts.append(chan.countCells(layers))
         self.cell_counts = np.stack(counts, axis=1)
         
         string = "Layer / {}".format(self.name)
         string += "".join(['/ '+c.name for c in self.channels])
         string += '\n'
-        if layerVals is None:
+        if layers is None:
             string += "{:<d}         {:0>3d}       {:0>3d}      {:0>3d}".format(1, self.cell_counts[0,0], self.cell_counts[0,1], self.cell_counts[0,2])
         else:
             for i in range(self.cell_counts.shape[0]):

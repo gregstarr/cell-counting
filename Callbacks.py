@@ -66,14 +66,14 @@ class Mixin:
             self.resultChannel.setLayers(layers)
             
             for i,layerline in enumerate(self.blueChannel.layerlines):
-                layerline.sigPositionChangeFinished.connect(self.change_lines(i))
+                layerline.sigRegionChangeFinished.connect(self.change_lines(i))
 
     def change_lines(self, lineNum):
         bluelayerline = self.blueChannel.layerlines[lineNum]
         def layer_function():
-            self.redChannel.updateLayers(lineNum, bluelayerline.value())
-            self.greenChannel.updateLayers(lineNum, bluelayerline.value())
-            self.resultChannel.updateLayers(lineNum, bluelayerline.value())
+            self.redChannel.updateLayers(lineNum, bluelayerline)
+            self.greenChannel.updateLayers(lineNum, bluelayerline)
+            self.resultChannel.updateLayers(lineNum, bluelayerline)
 
         return layer_function
                 

@@ -42,41 +42,77 @@ def findCells(img, size, variance, minSize, maxSize, threshold=.125):
     return cells3
 
 def countCells(bin_img, layers=None):
-    layerNums = []
-    y = 0
-    x = 0 
-    height = bin_img.shape[0]
-    if layers is None:
-        layers = [height]
-        
+    
+    layerNums = [0]*5
     labels = skm.label(bin_img)
     stats = skm.regionprops(labels)
-    layer1 = 0
-    layer2_3 = 0
-    layer4 = 0
-    layer5 = 0
-    layer6 = 0
+    
+    if layers is not None:
+        processed_layers = preprocessLayers(layers, bin_img.shape)
+        print(processed_layers)
+    else:
+        layerNums[0] = len(labels)
+        return layerNums
     
     for prop in stats:
         x, y = prop.centroid
-        if y <= layers[0]:
-            layer1+=1
-        elif layers[0] < y <= layers[1]:
-            layer2_3+=1
-        elif layers[1] < y <= layers[2]:
-            layer4+=1
-        elif layers[2] < y <= layers[3]:
-            layer5+=1
-        elif layers[3] < y:
-            layer6+=1
-    
-    layerNums.append(layer1)
-    layerNums.append(layer2_3)
-    layerNums.append(layer4)
-    layerNums.append(layer5)
-    layerNums.append(layer6)
+        for i in range(len(processed_layers)):
+            if aboveLayer([x,y], processed_layers[i]):
+                layerNums[i] += 1
+                break
+        else:
+            layerNums[-1] += 1
 
     return layerNums
+
+def aboveLayer(point, layer):
+    ## TODO: Make this work for all cells at once
+    for i in range(layer.shape[0]-1):
+        if point[0] >= layer[i,0] and point[0] <layer[i+1,0]:
+            break
+    if point[1] <= layer[i,1] and point[1] <= layer[i+1,1]:
+        return True
+    if point[1] > layer[i,1] and point[1] > layer[i+1,1]:
+        return False
+    yt = (layer[i+1,1] - layer[i,1])*(point[0]-layer[i,0]) / (layer[i+1,0]-layer[i,0]) + layer[i,1]
+    if point[1] <= yt:
+        return True
+    return False
+
+def preprocessLayers(layers, imshape):
+    ## TODO: Make this check for layer intersections that occur within image
+    new_layers = []
+    for layer in layers[::-1]:
+        #Left Side
+        ax = -1*layer[0,0]/(layer[0,0]-layer[1,0])
+        ay = (imshape[0]-layer[0,1])/(layer[0,1]-layer[1,1])
+        if abs(ax) < abs(ay):
+            firstpt = np.array([0, layer[0,1] + ax*(layer[0,1]-layer[1,1])])
+        else:
+            firstpt = np.array([layer[0,0] + ay*(layer[0,0]-layer[1,0]), imshape[0]])
+            
+        #Right Side    
+        ax = (imshape[1]-layer[-1,0])/(layer[-1,0]-layer[-2,0])
+        ay = (imshape[0]-layer[-1,1])/(layer[-1,1]-layer[-2,1])
+        if abs(ax) < abs(ay):
+            lastpt = np.array([imshape[1], layer[-1,1] + ax*(layer[-1,1]-layer[-2,1])])
+        else:
+            lastpt = np.array([layer[-1,0] + ay*(layer[-1,0]-layer[-2,0]), imshape[0]])
+            
+        if len(new_layers) > 0:
+            firstpt[1] = min(firstpt[1], new_layers[-1][0,1])
+            firstpt[0] = min(firstpt[0], new_layers[-1][0,0])
+            lastpt[1] = min(lastpt[1], new_layers[-1][-1,1])
+            lastpt[0] = max(lastpt[0], new_layers[-1][-1,0])
+        
+        new_layers.append(np.concatenate([firstpt[None,:], layer, lastpt[None,:]], axis=0))
+        
+    return new_layers[::-1]
+        
+    
+        
+    
+    
 
 def addHorizontalNoise(image):
     
