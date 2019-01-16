@@ -38,5 +38,4 @@ class CellCounterApp(QMainWindow, Layout.Mixin, Callbacks.Mixin):
         self.artificalLayerChannel = None
         self.blueChannelStatus = None
         self.numLayers = 0
-        self.setup()
-        
+        self.setup()       

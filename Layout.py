@@ -7,41 +7,140 @@ import pyqtgraph as pg
 import json
 
 class Mixin:
-    def setup(self):
+    def setup(self):        
+        self.pageList = QListWidget()
+        self.pageList.insertItem(0, 'set up')
+        self.pageList.insertItem(1, 'detection')
         self.first_page = QWidget()
         self.detection_page = QWidget()
+        
+        self.one_page()
+        self.d_page()
+        
         self.stacked_pages = QStackedWidget(self)
         
         self.stacked_pages.addWidget(self.first_page)
         self.stacked_pages.addWidget(self.detection_page)
         
-        self.leftlist = QListWidget()
-        self.leftlist.insertItem(0, 'start')
-        self.leftlist.insertItem(1, 'detection')
-        self.leftlist.currentRowChanged.connect(self.display)
-            
-        self.one_page()
-        self.d_page()
-        print(self.stacked_pages.count())
+        hbox = QSplitter()
+        hbox.addWidget(self.pageList)
+        hbox.addWidget(self.stacked_pages)
 
-    def one_page(self):
-        one_layout = QVBoxLayout()
-        detection_channels_label = QLabel('Choose cell detection color channels: ')       
-        self.submit_button = QPushButton('submit')
-        one_layout.addWidget(detection_channels_label)
-        one_layout.addWidget(self.submit_button)
-        self.first_page.setLayout(one_layout)
-        self.setCentralWidget(self.first_page)
-        self.submit_button.pressed.connect(self.openDetectionPage)
-       # print(self.stacked_pages.currentIndex())
+        hbox.setCollapsible(0, False)
+        hbox.setCollapsible(1, False)
+        hbox.setSizes([1, 1499])
+
+        #print(hbox.sizes())
+
+
+        #widget = QWidget()
+        #widget.setLayout(hbox)
+        self.setCentralWidget(hbox)
+
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding,QSizePolicy.Ignored)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(10000)
+        #sizePolicy.setHeightForWidth(self.pageList.sizePolicy().hasHeightForWidth())
+     
+        self.pageList.setSizePolicy(sizePolicy)
+
+        self.pageList.currentRowChanged.connect(self.display)
+        self.setWindowTitle("Cell Counter 2000")
+        self.setGeometry(0,0,1500,self.minimumHeight())
+        #self.resize(self.minimumHeight());
+
         self.show()
         
-    def openDetectionPage(self):
-        self.stacked_pages.setCurrentWidget(self.detection_page)
-    
-    def display(self, i):
-        self.stacked_pages.setCurrentIndex(i)
+        #self.pageList.setSizes([10, 10])
+
+
+    def one_page(self):
+        one_layout = QHBoxLayout()
+        right_box = QGroupBox("Settings")
+        one_layout.addWidget(right_box)
+        right_layout = QVBoxLayout()
+        right_box.setLayout(right_layout)
         
+        sub_top_box = QGroupBox("Image Description")
+        right_layout.addWidget(sub_top_box)
+        sub_top_layout = QVBoxLayout()
+        sub_top_box.setLayout(sub_top_layout)
+
+        sub_layout_1 = QHBoxLayout()
+        sub_layout_2 = QHBoxLayout()
+        
+        detection_channels_label = QLabel('Choose cell detection color channels and add color channel label: ')   
+        red_dc = QCheckBox("Red")
+        red_dc_label = QLineEdit()
+        green_dc = QCheckBox("Green")
+        green_dc_label = QLineEdit()
+        blue_dc = QCheckBox("Blue")
+        blue_dc_label = QLineEdit()
+
+        layers_channel_label = QLabel("Choose layers color channel: ")
+        red_lc = QCheckBox("Red")
+        green_lc = QCheckBox("Green")
+        blue_lc = QCheckBox("Blue")
+        separate_lc = QCheckBox("Separate Dapi Image")
+        
+        sub_layout_1.addWidget(red_dc)
+        sub_layout_1.addWidget(red_dc_label)
+        sub_layout_1.addWidget(green_dc)
+        sub_layout_1.addWidget(green_dc_label)
+        sub_layout_1.addWidget(blue_dc)
+        sub_layout_1.addWidget(blue_dc_label)
+
+        sub_layout_2.addWidget(red_lc)
+        sub_layout_2.addWidget(green_lc)
+        sub_layout_2.addWidget(blue_lc)
+        sub_layout_2.addWidget(separate_lc)
+        
+        sub_top_layout.addWidget(detection_channels_label)
+        sub_top_layout.addLayout(sub_layout_1)
+        sub_top_layout.addWidget(layers_channel_label)
+        sub_top_layout.addLayout(sub_layout_2)
+        
+        sub_mid_box = QGroupBox("Number of Layers")
+        right_layout.addWidget(sub_mid_box)
+        sub_mid_layout = QHBoxLayout()
+        sub_mid_box.setLayout(sub_mid_layout)
+        
+        numLayers_label = QLabel("Enter Number of Layers")
+        numLayers = QLineEdit()
+        
+        sub_mid_layout.addWidget(numLayers_label)
+        sub_mid_layout.addWidget(numLayers)
+        
+        sub_bottom_box = QGroupBox("Colocalization")
+        right_layout.addWidget(sub_bottom_box)
+        sub_bottom_layout = QHBoxLayout()
+        sub_bottom_box.setLayout(sub_bottom_layout)
+        
+        combo_label = QLabel("Check to Count All Combinations: ")
+        combo_checkBox = QCheckBox('')
+        
+        sub_bottom_layout.addWidget(combo_label)
+        sub_bottom_layout.addWidget(combo_checkBox)
+        
+        self.submit_button = QPushButton('submit')
+        right_layout.addWidget(self.submit_button)
+        
+        bottom_space_box = QGroupBox(" ")
+        right_layout.addWidget(bottom_space_box)
+        bottom_space_layout = QHBoxLayout()
+        bottom_space_box.setLayout(bottom_space_layout)
+        empty_space = QLabel("                                                         ")
+        bottom_space_layout.addWidget(empty_space)
+
+        one_layout.addWidget(empty_space)
+        one_layout.addWidget(empty_space)
+        one_layout.addWidget(empty_space)
+
+        self.first_page.setLayout(one_layout)
+      #  self.submit_button.pressed.connect(self.openDetectionPage)
+       # print(self.stacked_pages.currentIndex())
+       # self.show()
+
     def d_page(self):
         with open('config.json') as json_data_file:
             data = json.load(json_data_file)
@@ -72,14 +171,18 @@ class Mixin:
         toplevel_layout.addLayout(hlayout_top1)
         toplevel_layout.addLayout(hlayout_top2)
         toplevel_layout.addLayout(hlayout_top3)
+        #hlayout_bottom.addWidget(bottom_right)
         hlayout_bottom.addWidget(tabs)
+        #print(hlayout_bottom.indexOf(tabs))
         hlayout_bottom.addWidget(bottom_right)
+       # print(hlayout_bottom.indexOf(bottom_right))
+        hlayout_bottom.setCollapsible(0, False)
+        hlayout_bottom.setCollapsible(1, False)
+        hlayout_bottom.setSizes([1499, 1])
+        print(hlayout_bottom.sizes())
 
         toplevel_layout.addWidget(hlayout_bottom)
-        #self.detection_page.setLayout(toplevel_layout)
-        widget = QWidget()
-        widget.setLayout(toplevel_layout)
-        self.setCentralWidget(widget)
+        self.detection_page.setLayout(toplevel_layout)
         
         #%% File Selection
         fname_label = QLabel('Image Path:')
@@ -90,7 +193,6 @@ class Mixin:
         hlayout_top1.addWidget(browse_button)
 
         if self.addLayersTab:
-            print("hey")
             fname_label_dapi = QLabel('Dapi Path:')
             self.fname_entry_dapi = QLineEdit()
             browse_button_dapi = QPushButton('Browse')
@@ -260,8 +362,16 @@ class Mixin:
         self.layer_button.pressed.connect(self.layer_button_callback)
         tabs.currentChanged.connect(self.tab_changed_callback)
         
-        self.setWindowTitle("Cell Counter 2000")
-        self.setGeometry(100,100,1280,960)
-        self.show()
+       # self.setWindowTitle("Cell Counter 2000")
+       # self.setGeometry(100,100,1280,960)
+       # self.show()
         a,b = hlayout_bottom.sizes()
         hlayout_bottom.setSizes([.8*(a+b), .2*(a+b)])
+        
+                
+    def openDetectionPage(self):
+        self.stacked_pages.setCurrentWidget(self.detection_page)
+    
+    def display(self, i):
+        self.stacked_pages.setCurrentIndex(i)
+        
