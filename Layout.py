@@ -42,7 +42,6 @@ class Mixin:
     def display(self, i):
         self.stacked_pages.setCurrentIndex(i)
         
-        
     def d_page(self):
         with open('config.json') as json_data_file:
             data = json.load(json_data_file)
@@ -77,10 +76,10 @@ class Mixin:
         hlayout_bottom.addWidget(bottom_right)
 
         toplevel_layout.addWidget(hlayout_bottom)
-        self.detection_page.setLayout(toplevel_layout)
-        #widget = QWidget()
-        #widget.setLayout(toplevel_layout)
-        #self.setCentralWidget(widget)
+        #self.detection_page.setLayout(toplevel_layout)
+        widget = QWidget()
+        widget.setLayout(toplevel_layout)
+        self.setCentralWidget(widget)
         
         #%% File Selection
         fname_label = QLabel('Image Path:')

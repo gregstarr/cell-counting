@@ -6,7 +6,7 @@ import numpy as np
 
 class DrawingImage(pg.ImageItem):
     
-    colors = {'r':0, 'g':1, 'b':2, 'y':[0,1]}
+    colors = {'r':0, 'g':1, 'b':2}
     
     def __init__(self, c, image=None, **kargs):
         pg.ImageItem.__init__(self, image, **kargs)
@@ -22,21 +22,22 @@ class DrawingImage(pg.ImageItem):
         y, x = np.mgrid[-self.centerValue:size-self.centerValue, -self.centerValue:size-self.centerValue]
         self.mask[:,:,:] = (x*x + y*y <= (size-1)/2*(size-1)/2)[:,:,None]
         self.kern[:,:,DrawingImage.colors[self.c]]=255
-        
+
+    
     def mouseClickEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.setDrawKernel(self.kern, center=(self.centerValue, self.centerValue))
+            self.setDrawKernel(self.kern, self.mask, center=(self.centerValue, self.centerValue))
             self.drawAt(event.pos(), event)
         if event.button() == Qt.RightButton:
-            self.setDrawKernel(self.kern*0, center=(self.centerValue, self.centerValue))
+            self.setDrawKernel(self.kern*0, self.mask, center=(self.centerValue, self.centerValue))
             self.drawAt(event.pos(), event)
         
     def mouseDragEvent(self, event):
         if event.isStart():
             if event.button() == Qt.LeftButton:
-                self.setDrawKernel(self.kern, center=(self.centerValue, self.centerValue))
+                self.setDrawKernel(self.kern, self.mask, center=(self.centerValue, self.centerValue))
             if event.button() == Qt.RightButton:
-                self.setDrawKernel(self.kern*0, center=(self.centerValue, self.centerValue))
+                self.setDrawKernel(self.kern*0, self.mask, center=(self.centerValue, self.centerValue))
         if event.button() in [Qt.LeftButton, Qt.RightButton]:
             
             pos = event.pos()
@@ -118,7 +119,7 @@ class HoverImage(pg.ImageItem):
         mask = x*x + y*y <= (size-1)/2*(size-1)/2
         self.kern[mask] = 255
         self.setDrawKernel(self.kern, center=(self.centerValue, self.centerValue))
-        
+
     def hoverEvent(self, event):
         if not event.isExit():
             self.image[:,:] = 0
@@ -127,5 +128,3 @@ class HoverImage(pg.ImageItem):
         else:
             self.image[:,:] = 0
             self.updateImage()
-
-

@@ -3,11 +3,10 @@ from scipy.signal import correlate2d
 import scipy.ndimage as ndi
 import skimage.measure as skm
 from skimage import morphology
-from skimage.io import imsave
+#from skimage.io import imsave
+from skimage.external.tifffile import imsave, TiffFile
 import cv2
 import warnings
-from matplotlib import pyplot as plt
-
 
 def findCells(img, size, variance, minSize, maxSize, threshold=.125):
     
@@ -22,8 +21,7 @@ def findCells(img, size, variance, minSize, maxSize, threshold=.125):
     temp = np.exp(-.5*((X**2+Y**2)/var))
     
     # correlate with green image
-    xc = correlate2d(img_w_noise, temp-temp.mean(), 'valid')
-    xc = ndi.interpolation.shift(xc, [temp.shape[1]/2,temp.shape[0]/2])
+    xc = correlate2d(img_w_noise, temp-temp.mean(), 'same')
     # threshold
     cells = xc > xc.max() * threshold
     
@@ -35,55 +33,41 @@ def findCells(img, size, variance, minSize, maxSize, threshold=.125):
     for i in range(0, nb_components):
         if sizes[i] <= maxSize:
             cells3[output == i + 1] = 255
+            
     cells3=cells3.astype(np.uint8)
+    cells3[:20,:] = 0
+    cells3[:,:20] = 0
+    cells3[-20:,:] = 0
+    cells3[:,-20:] = 0
 
     return cells3
 
-def countCells(bin_img, layers=None):
-    #labels,n = ndi.label(bin_img)
-    layerNums = []
+def countCells(bin_img, l=None):
+    layerNums = [] #cell count per layer array
+    layerCount = 0 #cell count for current layer
+    #print(len(l))
+    layerValues = l.copy() #where the layers are
     y = 0
     x = 0 
-    width = bin_img.shape[1]
-    height = bin_img.shape[0]
-    if layers is None:
-        layers = [height]
-   # for layer in layers:
-   #     layer_img = bin_img[y:y+layer, x:width]
-   #     labels, n= ndi.label(layer_img)
-  #      layerNums.append(n)
-  #      y = y+layer
-  #  layer_img = bin_img[y:height, x:width]
-  #  labels, n= ndi.label(layer_img)
-  #  layerNums.append(n)
+    height = bin_img.shape[1]
+    #print(len(layerValues))
+    if layerValues is None:
+        layerValues = [height]
+    else:
+        layerValues.append(height)
     labels = skm.label(bin_img)
     stats = skm.regionprops(labels)
-  #  plt.figure()
-#    plt.imshow(labels)
-    layer1 = 0
-    layer2_3 = 0
-    layer4 = 0
-    layer5 = 0
-    layer6 = 0
-    for prop in stats:
-        y, x = prop.centroid
-        if 0<y<=layers[0]:
-            layer1+=1
-        elif layers[0]<y<=layers[1]:
-            layer2_3+=1
-        elif layers[1]<y<=layers[2]:
-            layer4+=1
-        elif layers[2]<y<=layers[3]:
-            layer5+=1
-        elif layers[3]<y<=height:
-            layer6+=1
-    
-    layerNums.append(layer1)
-    layerNums.append(layer2_3)
-    layerNums.append(layer4)
-    layerNums.append(layer5)
-    layerNums.append(layer6)
-
+    prevLayerVal = 0
+    for layer in layerValues:
+        #print(str(prevLayerVal)+"<"+str(layer))
+        for prop in stats:
+            x, y = prop.centroid
+            if prevLayerVal<=y<layer:
+                layerCount+=1
+        #print(layerCount)
+        layerNums.append(layerCount)
+        layerCount = 0
+        prevLayerVal = layer
     return layerNums
 
 def addHorizontalNoise(image):
@@ -103,55 +87,19 @@ def addHorizontalNoise(image):
         
     return image_with_noise
 
-def addLayers(blue):
-    
-    avg = np.mean(blue, axis = 1)
-    
-    rows = len(avg)
-    lowDensity = []
-    midDensity = []
-    highDensity = []
-    
-    
-    
-    for x in range(rows):
-        if avg[x]<=30:
-            lowDensity.append(x)
-        elif 30 < avg[x] <= 40:
-            midDensity.append(x)
-        elif 40 < avg[x] <= 60:
-            highDensity.append(x)     
-    
-    lenLow = len(lowDensity)
-    lenMid = len(midDensity)
-    lenHigh = len(highDensity) 
-    
-    for x in range(lenLow-1):
-       if lowDensity[x+1] - lowDensity[x] < 15:
-           layer1End = lowDensity[x+1]
-       else:
-           break
-    
-    for x in range(lenMid-1):
-        if midDensity[x] > layer1End:
-            if midDensity[x+1] - midDensity[x] < 15:
-                layer2_3End = midDensity[x+1]
-            else:
-                break
-    
-    for x in range(lenHigh-1):
-        if highDensity[x] > layer2_3End:
-            if highDensity[x+1] - highDensity[x] < 70:
-                layer4End = highDensity[x+1]
-                layer5End = highDensity[x+2]
-            else:
-                break
-    
-    return layer1End, layer2_3End, layer4End, layer5End
+def addLayers(blue, numLayers):
+    adder = 1/(numLayers+1)
+    multiplier = 0 
+    layers = []
+    for x in range(0, numLayers): 
+        multiplier+=adder
+        layer = int(multiplier*blue.shape[0])
+        layers.append(layer)
+        
+    return layers
 
-def saveImages(filename, yellow, red, green):
+def saveImages(filename, channelLabels, channelNames, layerValues, thresholdValues, minValues, maxValues, tsValues, varValues ):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        imsave(filename + "_yellow.png", yellow)
-        imsave(filename + "_red.png", red)
-        imsave(filename + "_green.png", green)
+    for x in range(0, len(channelLabels)):
+        imsave(filename + "_"+channelNames[x]+".tif", channelLabels[x].astype(np.uint8), metadata={"layers": layerValues, "thresholdValues": thresholdValues, "minValues": minValues, "maxValues": maxValues, "tsValues": tsValues, "varValues": varValues})
