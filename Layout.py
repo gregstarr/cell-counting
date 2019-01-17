@@ -8,9 +8,9 @@ import json
 
 class Mixin:
     def setup(self):        
-        self.pageList = QListWidget()
-        self.pageList.insertItem(0, 'set up')
-        self.pageList.insertItem(1, 'detection')
+        #self.pageList = QListWidget()
+        #self.pageList.insertItem(0, 'set up')
+        #self.pageList.insertItem(1, 'detection')
         self.first_page = QWidget()
         self.detection_page = QWidget()
         
@@ -23,12 +23,12 @@ class Mixin:
         self.stacked_pages.addWidget(self.detection_page)
         
         hbox = QSplitter()
-        hbox.addWidget(self.pageList)
+        #hbox.addWidget(self.pageList)
         hbox.addWidget(self.stacked_pages)
 
-        hbox.setCollapsible(0, False)
-        hbox.setCollapsible(1, False)
-        hbox.setSizes([1, 1499])
+       # hbox.setCollapsible(0, False)
+        #hbox.setCollapsible(1, False)
+        #hbox.setSizes([1, 1499])
 
         #print(hbox.sizes())
 
@@ -37,14 +37,14 @@ class Mixin:
         #widget.setLayout(hbox)
         self.setCentralWidget(hbox)
 
-        sizePolicy = QSizePolicy(QSizePolicy.Expanding,QSizePolicy.Ignored)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(10000)
+       # sizePolicy = QSizePolicy(QSizePolicy.Expanding,QSizePolicy.Ignored)
+       # sizePolicy.setHorizontalStretch(0)
+        #sizePolicy.setVerticalStretch(10000)
         #sizePolicy.setHeightForWidth(self.pageList.sizePolicy().hasHeightForWidth())
      
-        self.pageList.setSizePolicy(sizePolicy)
+        #self.pageList.setSizePolicy(sizePolicy)
 
-        self.pageList.currentRowChanged.connect(self.display)
+        #self.pageList.currentRowChanged.connect(self.display)
         self.setWindowTitle("Cell Counter 2000")
         self.setGeometry(0,0,1500,self.minimumHeight())
         #self.resize(self.minimumHeight());
@@ -70,35 +70,41 @@ class Mixin:
         sub_layout_2 = QHBoxLayout()
         
         detection_channels_label = QLabel('Choose cell detection color channels and add color channel label: ')   
-        red_dc = QCheckBox("Red")
-        red_dc_label = QLineEdit()
-        green_dc = QCheckBox("Green")
-        green_dc_label = QLineEdit()
-        blue_dc = QCheckBox("Blue")
-        blue_dc_label = QLineEdit()
+        self.red_dc = QCheckBox("Red")
+        self.red_dc_label = QLineEdit()
+        self.green_dc = QCheckBox("Green")
+        self.green_dc_label = QLineEdit()
+        self.blue_dc = QCheckBox("Blue")
+        self.blue_dc_label = QLineEdit()
 
         layers_channel_label = QLabel("Choose layers color channel: ")
-        red_lc = QCheckBox("Red")
-        green_lc = QCheckBox("Green")
-        blue_lc = QCheckBox("Blue")
-        separate_lc = QCheckBox("Separate Dapi Image")
+        self.red_lc = QCheckBox("Red")
+        self.green_lc = QCheckBox("Green")
+        self.blue_lc = QCheckBox("Blue")
+        self.separate_lc = QCheckBox("Separate Dapi Image")
         
-        sub_layout_1.addWidget(red_dc)
-        sub_layout_1.addWidget(red_dc_label)
-        sub_layout_1.addWidget(green_dc)
-        sub_layout_1.addWidget(green_dc_label)
-        sub_layout_1.addWidget(blue_dc)
-        sub_layout_1.addWidget(blue_dc_label)
+        sub_layout_1.addWidget(self.red_dc)
+        sub_layout_1.addWidget(self.red_dc_label)
+        sub_layout_1.addWidget(self.green_dc)
+        sub_layout_1.addWidget(self.green_dc_label)
+        sub_layout_1.addWidget(self.blue_dc)
+        sub_layout_1.addWidget(self.blue_dc_label)
 
-        sub_layout_2.addWidget(red_lc)
-        sub_layout_2.addWidget(green_lc)
-        sub_layout_2.addWidget(blue_lc)
-        sub_layout_2.addWidget(separate_lc)
+        sub_layout_2.addWidget(self.red_lc)
+        sub_layout_2.addWidget(self.green_lc)
+        sub_layout_2.addWidget(self.blue_lc)
+        sub_layout_2.addWidget(self.separate_lc)
         
         sub_top_layout.addWidget(detection_channels_label)
         sub_top_layout.addLayout(sub_layout_1)
         sub_top_layout.addWidget(layers_channel_label)
         sub_top_layout.addLayout(sub_layout_2)
+        
+        meta_data_label = QLabel("Do imported images contain metadata?")
+        self.meta_data_cb = QCheckBox("Check if yes")
+        
+        sub_top_layout.addWidget(meta_data_label)
+        sub_top_layout.addWidget(self.meta_data_cb)
         
         sub_mid_box = QGroupBox("Number of Layers")
         right_layout.addWidget(sub_mid_box)
@@ -106,10 +112,10 @@ class Mixin:
         sub_mid_box.setLayout(sub_mid_layout)
         
         numLayers_label = QLabel("Enter Number of Layers")
-        numLayers = QLineEdit()
+        self.numLayers = QLineEdit()
         
         sub_mid_layout.addWidget(numLayers_label)
-        sub_mid_layout.addWidget(numLayers)
+        sub_mid_layout.addWidget(self.numLayers)
         
         sub_bottom_box = QGroupBox("Colocalization")
         right_layout.addWidget(sub_bottom_box)
@@ -117,10 +123,10 @@ class Mixin:
         sub_bottom_box.setLayout(sub_bottom_layout)
         
         combo_label = QLabel("Check to Count All Combinations: ")
-        combo_checkBox = QCheckBox('')
+        self.combo_checkBox = QCheckBox('')
         
         sub_bottom_layout.addWidget(combo_label)
-        sub_bottom_layout.addWidget(combo_checkBox)
+        sub_bottom_layout.addWidget(self.combo_checkBox)
         
         self.submit_button = QPushButton('submit')
         right_layout.addWidget(self.submit_button)
@@ -137,9 +143,8 @@ class Mixin:
         one_layout.addWidget(empty_space)
 
         self.first_page.setLayout(one_layout)
-      #  self.submit_button.pressed.connect(self.openDetectionPage)
-       # print(self.stacked_pages.currentIndex())
-       # self.show()
+        self.submit_button.pressed.connect(self.openDetectionPage)
+
 
     def d_page(self):
         with open('config.json') as json_data_file:
@@ -372,6 +377,6 @@ class Mixin:
     def openDetectionPage(self):
         self.stacked_pages.setCurrentWidget(self.detection_page)
     
-    def display(self, i):
-        self.stacked_pages.setCurrentIndex(i)
+    #def display(self, i):
+       # self.stacked_pages.setCurrentIndex(i)
         

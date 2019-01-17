@@ -14,9 +14,9 @@ import json
 class Tabs(IntEnum):
     red = 0
     green = 1
-    blue = 2
-    layers = 3
-    results = 4
+    #blue = 2
+    layers = 2
+    results = 3
     #layers = 4
 
 class Mixin:

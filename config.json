@@ -1,9 +1,9 @@
 
 {
- "blue channel": "Count",
- "dapi": "Yes",
- "artificalLayerChannel": "None",
- "numLayers": "5",
+ "blue channel": "None",
+ "dapi": "No",
+ "artificalLayerChannel": "Red",
+ "numLayers": "3",
  "numDetectionChannels": "3",
  "countAllCombos": "No"
  
