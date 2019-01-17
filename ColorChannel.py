@@ -6,7 +6,7 @@ from PyQt5.QtCore import *
 import numpy as np
 import ImageProc as ip
 import os
-import json
+#import json
 
 class Channel:
     
@@ -206,12 +206,12 @@ class ResultsChannel(Channel):
             self.background_img_item.setImage(colocal)
             
             
-    def countCells(self):
-        countAll = False 
-        with open('config.json') as json_data_file:
-            data = json.load(json_data_file)
-        if data['countAllCombos']=="Yes":
-            countAll = True
+    def countCells(self, countAllCombos):
+        countAll = countAllCombos
+      #  with open('config.json') as json_data_file:
+      #      data = json.load(json_data_file)
+      #  if data['countAllCombos']=="Yes":
+      #      countAll = True
         self.columnNames = []
         for c in self.channels:
             self.columnNames.append(c.name)

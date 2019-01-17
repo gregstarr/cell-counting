@@ -33,9 +33,17 @@ class CellCounterApp(QMainWindow, Layout.Mixin, Callbacks.Mixin):
         self.addBlueChannel = True
         self.addLayersTab = False
         self.artificalLayerChannel = None
+        self.layerChannelName = None
         self.channels = []
         self.seperateDapiFile = False
         self.artificalLayerChannel = None
         self.blueChannelStatus = None
         self.numLayers = 0
+        self.detectionChannels = []
+        self.detectionChannels_labels = []
+        self.dChannels = []
+        self.contains_meta_data = False 
+        self.countAllCombos = False
+        self.Tabs = {}
         self.setup()       
+        

@@ -10,29 +10,29 @@ from enum import IntEnum
 from ColorChannel import DetectionChannel
 import json
 
-
-class Tabs(IntEnum):
-    red = 0
-    green = 1
-    #blue = 2
-    layers = 2
-    results = 3
-    #layers = 4
+#class Tabs(IntEnum):
+#    red = 0
+#    green = 1
+#    #blue = 2
+#    layers = 2
+#    results = 3
+#    #layers = 4
 
 class Mixin:
-    def getParameters(self):
-        with open('config.json') as json_data_file:
-            data = json.load(json_data_file)  
-        if data['dapi']=="Yes":
-            self.seperateDapiFile = True
-        if data['artificalLayerChannel']!= "None":
-            self.artificalLayerChannel = data['artificalLayerChannel'] #Red, Green, or Blue 
-        if data['blue channel']!= "None":
-            self.blueChannelStatus = data['blue channel'] #either count or layers 
-        self.numLayers = int(data['numLayers'])-1
+#    def getParameters(self):
+#        with open('config.json') as json_data_file:
+#            data = json.load(json_data_file)  
+#        if data['dapi']=="Yes":
+#            self.seperateDapiFile = True
+#        if data['artificalLayerChannel']!= "None":
+#            self.artificalLayerChannel = data['artificalLayerChannel'] #Red, Green, or Blue 
+#        if data['blue channel']!= "None":
+#            self.blueChannelStatus = data['blue channel'] #either count or layers 
+#        self.numLayers = int(data['numLayers'])-1
         
     def browse_button_callback(self):
-        self.getParameters()
+        print(self.Tabs)
+       # self.getParameters()
         filename, _ = QFileDialog.getOpenFileName(self,"Select Image File","./images","Tiff Files(*.tif);;All Files (*)")
         if not os.path.isfile(filename):
             self.status_box.append("User pressed cancel or selected invalid file")
@@ -47,28 +47,26 @@ class Mixin:
         for c in self.channels:
             c.reset()
         blueImg, greenImg, redImg = cv2.split(im)
+        print(blueImg.shape)
         if blueImg.sum() == 0:
             self.status_box.append("Selected image has no blue channel")
         else:
             self.blueChannel.setBackgroundImage(blueImg)
         self.redChannel.setBackgroundImage(redImg)
         self.greenChannel.setBackgroundImage(greenImg)
-        if self.artificalLayerChannel!=None:
-            if self.artificalLayerChannel=="Red":
+        if self.layerChannelName!='Blue':
+            if self.layerChannelName=="Red":
                 self.layersChannel.setBackgroundImage(redImg)
-            elif self.artificalLayerChannel=="Green":
+            elif self.layerChannelName=="Green":
                 self.layersChannel.setBackgroundImage(greenImg)
-            elif self.artificalLayerChannel=="Blue":
-                self.layersChannel.setBackgroundImage(blueImg)
-        if self.blueChannelStatus=="Count":
-             if self.current_tab in [Tabs.red, Tabs.green, Tabs.blue]:
+        if 'b' in self.detectionChannels:
+             if self.current_tab in [self.Tabs['red'], self.Tabs['green'], self.Tabs['blue']]:
                  self.run_button.setEnabled(True)           
-        elif self.blueChannelStatus=="Layers" or self.blueChannelStatus==None:
-            if self.current_tab in [Tabs.red, Tabs.green]:
+        else:
+            if self.current_tab in [self.Tabs['red'], self.Tabs['green']]:
                 self.run_button.setEnabled(True)
     
     def browse_button_dapi_callback(self):
-        self.getParameters()
         dapi_filename, _ = QFileDialog.getOpenFileName(self,"Select Dapi File","./images","Tiff Files(*.tif);;All Files (*)")
         if not os.path.isfile(dapi_filename):
             self.status_box.append("User pressed cancel or selected invalid file")
@@ -104,27 +102,26 @@ class Mixin:
         
             
     def layer_button_callback(self):
-        self.getParameters()
-        if self.blueChannelStatus=="Layers":
-            if self.current_tab == Tabs.blue and self.blueChannel.hasBackground() and not self.blueChannel.hasLayers():
+        if self.layerChannelName=="Blue":
+            if self.current_tab == self.Tabs['blue'] and self.blueChannel.hasBackground() and not self.blueChannel.hasLayers():
                 layers = self.blueChannel.addLayers(self.numLayers)
                 self.redChannel.setLayers(layers)
                 self.greenChannel.setLayers(layers)
                 self.resultChannel.setLayers(layers)
-        elif self.blueChannelStatus=="Count":
-            if self.current_tab == Tabs.layers and self.layersChannel.hasBackground() and not self.layersChannel.hasLayers():
+        elif 'b' in self.detectionChannels:
+            if self.current_tab == self.Tabs['layers'] and self.layersChannel.hasBackground() and not self.layersChannel.hasLayers():
                 layers = self.layersChannel.addLayers(self.numLayers)
                 self.redChannel.setLayers(layers)
                 self.greenChannel.setLayers(layers)
                 self.blueChannel.setLayers(layers)
                 self.resultChannel.setLayers(layers)
-        elif self.blueChannelStatus==None:
-            if self.current_tab == Tabs.layers and self.layersChannel.hasBackground() and not self.layersChannel.hasLayers():
+        elif 'b' not in self.detectionChannels and self.layerChannelName!="Blue":
+            if self.current_tab == self.Tabs['layers'] and self.layersChannel.hasBackground() and not self.layersChannel.hasLayers():
                 layers = self.layersChannel.addLayers(self.numLayers)
                 self.redChannel.setLayers(layers)
                 self.greenChannel.setLayers(layers)
                 self.resultChannel.setLayers(layers)
-        if self.blueChannelStatus=="Layers":             
+        if self.layerChannelName=="Blue":             
             for i,layerline in enumerate(self.blueChannel.layerlines):
                 layerline.sigPositionChangeFinished.connect(self.change_lines(i))
         else:
@@ -132,18 +129,18 @@ class Mixin:
                 layerline.sigPositionChangeFinished.connect(self.change_lines(i))
                 
     def change_lines(self, lineNum):
-        self.getParameters()
-        if self.blueChannelStatus=="Layers":
+       # self.getParameters()
+        if self.layerChannelName=="Blue":
             bluelayerline = self.blueChannel.layerlines[lineNum]
         else:
             bluelayerline = self.layersChannel.layerlines[lineNum]
             
         def layer_function():
-            if self.blueChannelStatus=="Layers" or self.blueChannelStatus==None:
+            if self.layerChannelName=="Blue" or 'b' not in self.detectionChannels:
                 self.redChannel.updateLayers(lineNum, bluelayerline.value())
                 self.greenChannel.updateLayers(lineNum, bluelayerline.value())
                 self.resultChannel.updateLayers(lineNum, bluelayerline.value())
-            elif self.blueChannelStatus=="Count":
+            elif 'b' in self.detectionChannels:
                 self.redChannel.updateLayers(lineNum, bluelayerline.value())
                 self.greenChannel.updateLayers(lineNum, bluelayerline.value())
                 self.blueChannel.updateLayers(lineNum, bluelayerline.value())
@@ -151,7 +148,7 @@ class Mixin:
         return layer_function
                 
     def tab_changed_callback(self, index):
-        self.getParameters()
+        #self.getParameters()
         self.current_tab = index
         channel = self.channels[self.current_tab]
         if isinstance(channel, DetectionChannel):
@@ -166,55 +163,55 @@ class Mixin:
                 channel.label_img_item.setVisible(False)
                 
         # Run Button
-        if self.current_tab == Tabs.red and self.redChannel.hasBackground():
+        if self.current_tab == self.Tabs['red'] and self.redChannel.hasBackground():
             self.run_button.setEnabled(True)
-        elif self.current_tab == Tabs.green and self.greenChannel.hasBackground():
+        elif self.current_tab == self.Tabs['green'] and self.greenChannel.hasBackground():
             self.run_button.setEnabled(True)
-        elif self.blueChannelStatus=="Count" and self.current_tab == Tabs.blue and self.blueChannel.hasBackground():
+        elif 'b' in self.detectionChannels and self.current_tab == self.Tabs['blue'] and self.blueChannel.hasBackground():
             self.run_button.setEnabled(True)
         else:
             self.run_button.setEnabled(False)
         # Layer Button
-        if self.blueChannelStatus=="Layers" and self.current_tab == Tabs.blue and self.blueChannel.hasBackground():
+        if self.layerChannelName=="Blue" and self.current_tab == self.Tabs['blue'] and self.blueChannel.hasBackground():
             self.layer_button.setEnabled(True)
-        elif self.artificalLayerChannel != None and self.current_tab == Tabs.layers and self.layersChannel.hasBackground():
+        elif self.layerChannelName!="Blue" and self.current_tab == self.Tabs['layers'] and self.layersChannel.hasBackground():
             self.layer_button.setEnabled(True)
         else:
             self.layer_button.setEnabled(False)
         # Update result channel
-        if self.blueChannelStatus=="Layers" or self.artificalLayerChannel != None:
-            if (self.current_tab == Tabs.results and 
+        if 'b' not in self.detectionChannels:
+            if (self.current_tab == self.Tabs['results'] and 
                 self.greenChannel.hasLabels() and 
                 self.redChannel.hasLabels()):
                 self.resultChannel.updateColocal()
-        elif self.blueChannelStatus=="Count":
-            if (self.current_tab == Tabs.results and 
+        elif 'b' in self.detectionChannels:
+            if (self.current_tab == self.Tabs['results'] and 
                 self.greenChannel.hasLabels() and 
                 self.redChannel.hasLabels() and self.blueChannel.hasLabels()):
                 self.resultChannel.updateColocal()
 
     def count_button_callback(self):
-        self.getParameters()
-        if self.blueChannelStatus=="Layers":           
+        #self.getParameters()
+        if self.layerChannelName=="Blue":           
             if not self.redChannel.hasLabels() or not self.greenChannel.hasLabels():
                 self.status_box.append("Label cells before counting cells")
                 return
             if not self.blueChannel.hasLayers():
                 self.status_box.append('All cells assumed to be in layer 1 (press "Add Layers")')
-        elif self.blueChannelStatus=="Count":
+        elif 'b' in self.detectionChannels:
             if not self.redChannel.hasLabels() or not self.greenChannel.hasLabels() or not self.blueChannel.hasLabels():
                 self.status_box.append("Label cells before counting cells")
                 return
             if not self.layersChannel.hasLayers():
                 self.status_box.append('All cells assumed to be in layer 1 (press "Add Layers")')
-        elif self.artificalLayerChannel != None:
+        elif self.layerChannelName!="Blue": #can change
             if not self.redChannel.hasLabels() or not self.greenChannel.hasLabels():
                 self.status_box.append("Label cells before counting cells")
                 return
             if not self.layersChannel.hasLayers():
                 self.status_box.append('All cells assumed to be in layer 1 (press "Add Layers")')
                 
-        result_text = self.resultChannel.countCells()
+        result_text = self.resultChannel.countCells(self.countAllCombos)
         self.status_box.append(result_text)
         
             

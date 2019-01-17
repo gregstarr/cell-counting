@@ -15,7 +15,7 @@ class Mixin:
         self.detection_page = QWidget()
         
         self.one_page()
-        self.d_page()
+       # self.d_page()
         
         self.stacked_pages = QStackedWidget(self)
         
@@ -112,10 +112,10 @@ class Mixin:
         sub_mid_box.setLayout(sub_mid_layout)
         
         numLayers_label = QLabel("Enter Number of Layers")
-        self.numLayers = QLineEdit()
+        self.numLayers_tb = QLineEdit()
         
         sub_mid_layout.addWidget(numLayers_label)
-        sub_mid_layout.addWidget(self.numLayers)
+        sub_mid_layout.addWidget(self.numLayers_tb)
         
         sub_bottom_box = QGroupBox("Colocalization")
         right_layout.addWidget(sub_bottom_box)
@@ -123,7 +123,7 @@ class Mixin:
         sub_bottom_box.setLayout(sub_bottom_layout)
         
         combo_label = QLabel("Check to Count All Combinations: ")
-        self.combo_checkBox = QCheckBox('')
+        self.combo_checkBox = QCheckBox('Note: Do not click unless have red, green, and blue detection channels')
         
         sub_bottom_layout.addWidget(combo_label)
         sub_bottom_layout.addWidget(self.combo_checkBox)
@@ -143,9 +143,129 @@ class Mixin:
         one_layout.addWidget(empty_space)
 
         self.first_page.setLayout(one_layout)
-        self.submit_button.pressed.connect(self.openDetectionPage)
+        
+        #connect
+        self.red_dc.stateChanged.connect(self.red_dc_callback)
+        self.green_dc.stateChanged.connect(self.green_dc_callback)
+        self.blue_dc.stateChanged.connect(self.blue_dc_callback)
+        
+        self.red_lc.stateChanged.connect(self.red_lc_callback)
+        self.green_lc.stateChanged.connect(self.green_lc_callback)
+        self.blue_lc.stateChanged.connect(self.blue_lc_callback)
+        self.separate_lc.stateChanged.connect(self.separate_lc_callback)
+        
+        self.meta_data_cb.stateChanged.connect(self.meta_data_callback)
+        
+        self.combo_checkBox.stateChanged.connect(self.combo_callback)
+        
+        self.submit_button.pressed.connect(self.submit_button_callback)
+            
+    def red_dc_callback(self, state):
+        if state:
+            self.detectionChannels.append('r')
+        else:
+            self.detectionChannels.remove('r')
+        print(self.detectionChannels)
+        
+    def green_dc_callback(self, state):
+        if state:
+            self.detectionChannels.append('g')
+        else:
+            self.detectionChannels.remove('g')
+        print(self.detectionChannels)
 
+    def blue_dc_callback(self, state):
+        if state:
+            self.detectionChannels.append('b')
+        else:
+            self.detectionChannels.remove('b')
+        print(self.detectionChannels)   
+        
+    def red_lc_callback(self, state):
+        if state:
+            self.green_lc.setCheckable(False)
+            self.blue_lc.setCheckable(False)
+            self.separate_lc.setCheckable(False)
+            self.layerChannelName = "Red"
+        else:
+            self.green_lc.setCheckable(True)
+            self.blue_lc.setCheckable(True)
+            self.separate_lc.setCheckable(True)
+        print(self.layerChannelName)
 
+    def green_lc_callback(self, state):
+        if state:
+            self.red_lc.setCheckable(False)
+            self.blue_lc.setCheckable(False)
+            self.separate_lc.setCheckable(False)
+            self.layerChannelName = "Green"
+        else:
+            self.red_lc.setCheckable(True)
+            self.blue_lc.setCheckable(True)
+            self.separate_lc.setCheckable(True)    
+        print(self.layerChannelName)
+
+    def blue_lc_callback(self, state):
+        if state:
+            self.green_lc.setCheckable(False)
+            self.red_lc.setCheckable(False)
+            self.separate_lc.setCheckable(False)
+            self.layerChannelName = "Blue"
+        else:
+            self.green_lc.setCheckable(True)
+            self.red_lc.setCheckable(True)
+            self.separate_lc.setCheckable(True)
+        print(self.layerChannelName)
+
+    def separate_lc_callback(self, state):
+        if state:
+            self.green_lc.setCheckable(False)
+            self.blue_lc.setCheckable(False)
+            self.red_lc.setCheckable(False)
+            self.layerChannelName = "Separate"
+        else:
+            self.green_lc.setCheckable(True)
+            self.blue_lc.setCheckable(True)
+            self.red_lc.setCheckable(True)
+        print(self.layerChannelName)
+    
+    def meta_data_callback(self, state):
+        if state:
+            self.contains_meta_data = True
+        else:
+            self.contains_meta_data = False 
+
+    def combo_callback(self, state):
+        if state:
+            self.countAllCombos = True
+        else:
+            self.countAllCombos = False 
+    
+    def submit_button_callback(self):
+        redChannel_label = self.red_dc_label.text()
+        greenChannel_label = self.green_dc_label.text()
+        blueChannel_label = self.blue_dc_label.text()
+        self.numLayers = int(self.numLayers_tb.text())-1
+        print(self.numLayers)
+        if 'r' in self.detectionChannels:
+            if len(redChannel_label)>0:
+                self.detectionChannels_labels.append(redChannel_label)
+            else:
+                self.detectionChannels_labels.append('red')
+        if 'g' in self.detectionChannels:
+            if len(greenChannel_label)>0:
+                self.detectionChannels_labels.append(greenChannel_label)  
+            else:
+                self.detectionChannels_labels.append('green')
+        if 'b' in self.detectionChannels:
+            if len(blueChannel_label)>0:
+                self.detectionChannels_labels.append(blueChannel_label)  
+            else:
+                self.detectionChannels_labels.append('blue')
+        print(self.detectionChannels_labels)
+        self.d_page()
+        self.stacked_pages.setCurrentWidget(self.detection_page)    
+    
     def d_page(self):
         with open('config.json') as json_data_file:
             data = json.load(json_data_file)
@@ -197,7 +317,7 @@ class Mixin:
         hlayout_top1.addWidget(self.fname_entry)
         hlayout_top1.addWidget(browse_button)
 
-        if self.addLayersTab:
+        if self.layerChannelName == "Separate":
             fname_label_dapi = QLabel('Dapi Path:')
             self.fname_entry_dapi = QLineEdit()
             browse_button_dapi = QPushButton('Browse')
@@ -217,36 +337,55 @@ class Mixin:
         redTab = QWidget()
         tabs.addTab(redTab, "Red")
         self.redChannel = DetectionChannel(redTab, 'r', name="Red")
+        self.Tabs['red']=0
         self.channels.append(self.redChannel)
+        self.dChannels.append(self.redChannel)
         # green tab
         greenTab = QWidget()
         tabs.addTab(greenTab, "Green")
         self.greenChannel = DetectionChannel(greenTab, 'g', name="Green")
+        self.Tabs['green']=1
         self.channels.append(self.greenChannel)
+        self.dChannels.append(self.greenChannel)
         # blue tab/Layers
-        if self.addLayersBlue:
+        print(self.layerChannelName)
+        if self.layerChannelName == "Blue":
             blueTab = QWidget()
             tabs.addTab(blueTab, "Layers")
             self.blueChannel = LayerChannel(blueTab, 'b', name="Layers")
+            self.Tabs['blue']=2
+            self.Tabs['results']=3
             self.channels.append(self.blueChannel)
-        elif self.countBlue:
+            print('hi')
+        elif 'b' in self.detectionChannels:
             blueTab = QWidget()
             tabs.addTab(blueTab, "Blue")
             self.blueChannel = DetectionChannel(blueTab, 'b', name="Blue")
+            self.Tabs['blue']=2
             self.channels.append(self.blueChannel)
+            self.dChannels.append(self.blueChannel)
         #layer tab 
-        if self.addLayersTab or self.artificalLayerChannel!="None":
+        if self.layerChannelName != "Blue":
             layersTab = QWidget()
             tabs.addTab(layersTab, "Layers")
             self.layersChannel = LayerChannel(layersTab, 'w', name = "Layers")
             self.channels.append(self.layersChannel)
+            if self.layerChannelName == "Separate":
+                self.Tabs['layers']=3
+                self.Tabs['results']=4
+            else:
+                self.Tabs['layers']=2
+                self.Tabs['results']=3
         # colocalization tab
+       # print("hey")
+        #print(self.channels)
         colocTab = QWidget()
         tabs.addTab(colocTab, "Colocalization")
-        if self.addLayersBlue or self.addBlueChannel == False:
-            self.resultChannel = ResultsChannel(colocTab, 'y', [self.redChannel, self.greenChannel], name="Coloc")
-        else:
-             self.resultChannel = ResultsChannel(colocTab, 'y', [self.redChannel, self.greenChannel, self.blueChannel], name="Coloc")           
+        #if self.addLayersBlue or self.addBlueChannel == False:
+        #    self.resultChannel = ResultsChannel(colocTab, 'y', [self.redChannel, self.greenChannel], name="Coloc")
+        #else:
+        #     self.resultChannel = ResultsChannel(colocTab, 'y', [self.redChannel, self.greenChannel, self.blueChannel], name="Coloc")           
+        self.resultChannel = ResultsChannel(colocTab, 'y', self.dChannels, name = "Coloc")
         self.channels.append(self.resultChannel)
         
         #%% CONTROL PANEL
@@ -350,7 +489,7 @@ class Mixin:
         statusLayout.addWidget(self.status_box)
         
         browse_button.pressed.connect(self.browse_button_callback)
-        if self.addLayersTab:
+        if self.layerChannelName == "Separate":
             browse_button_dapi.pressed.connect(self.browse_button_dapi_callback)
         browse_export_button.pressed.connect(self.browse_export_button_callback)
         export_button.pressed.connect(self.export_button_callback)
@@ -372,10 +511,6 @@ class Mixin:
        # self.show()
         a,b = hlayout_bottom.sizes()
         hlayout_bottom.setSizes([.8*(a+b), .2*(a+b)])
-        
-                
-    def openDetectionPage(self):
-        self.stacked_pages.setCurrentWidget(self.detection_page)
     
     #def display(self, i):
        # self.stacked_pages.setCurrentIndex(i)
