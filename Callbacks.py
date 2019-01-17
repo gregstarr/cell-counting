@@ -9,6 +9,7 @@ import os
 from enum import IntEnum
 from ColorChannel import DetectionChannel
 import json
+from skimage.measure import block_reduce
 
 #class Tabs(IntEnum):
 #    red = 0
@@ -46,8 +47,14 @@ class Mixin:
             return
         for c in self.channels:
             c.reset()
+        x, y, z = im.shape
+        if x>=2500 and y>=2500:
+           im = block_reduce(im, block_size=(2, 2, 1), func=np.mean)  
+           
+        x, y, z = im.shape
+        print(x)
         blueImg, greenImg, redImg = cv2.split(im)
-        print(blueImg.shape)
+
         if blueImg.sum() == 0:
             self.status_box.append("Selected image has no blue channel")
         else:
@@ -74,8 +81,12 @@ class Mixin:
         self.fname_entry_dapi.setText(dapi_filename)
                 #Open Dapi Image
         dapiIm = cv2.imread(dapi_filename)
+        x, y, z = dapiIm.shape
+        if x>=2500 and y>=2500:
+           dapiIm = block_reduce(dapiIm, block_size=(2, 2, 1), func=np.mean)   
+        x, y, z = dapiIm.shape
+        print(x)
         dapi, gdapi, rdapi = cv2.split(dapiIm)
-        print(dapi.shape)
         if dapi.sum()==0:
             self.status_box.append("Invalid image")
             return 
